@@ -43,10 +43,10 @@ class SentimentAnalyzer:
     
     def _create_hybrid_analyzer(self):
         """ハイブリッド分析器を作成"""
-        from .hybrid_analyzer import HybridSentimentAnalyzer
+        from .improved_hybrid_analyzer import ImprovedHybridAnalyzer
         
         # 設定から読み込み
-        return HybridSentimentAnalyzer(
+        return ImprovedHybridAnalyzer(
             confidence_threshold=sentiment_config.confidence_threshold,
             enable_onnx=sentiment_config.enable_onnx,
             onnx_model_path=sentiment_config.onnx_model_path
