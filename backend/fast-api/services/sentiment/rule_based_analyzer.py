@@ -65,6 +65,9 @@ class RuleBasedSentimentAnalyzer:
             EmotionRule(r'(大変|たいへん)', -0.5, 'difficulty', 1.0),
             EmotionRule(r'(無理|むり)', -0.6, 'impossible', 1.2),
             EmotionRule(r'(だめ|ダメ)', -0.6, 'bad', 1.2),
+            EmotionRule(r'(うまくいかない|上手くいかない)', -0.7, 'failure', 1.3),
+            EmotionRule(r'(ため息|ためいき)', -0.6, 'sigh', 1.2),
+            EmotionRule(r'(心が重い|気が重い)', -0.7, 'heavy_heart', 1.3),
             
             # 文末表現・記号
             EmotionRule(r'[!！]{2,}', 0.2, 'emphasis', 0.5),
@@ -211,7 +214,12 @@ class RuleBasedSentimentAnalyzer:
         
         # 否定語の適用
         if has_negation:
-            modified_score *= -0.7  # 否定で感情を反転・弱化
+            if modified_score > 0:
+                # ポジティブな感情の否定はネガティブに
+                modified_score *= -0.7
+            else :
+                # ネガティブな感情の否定は軽いポジティブに
+                modified_score = abs(modified_score) * 0.3
         
         return modified_score
     
