@@ -34,6 +34,13 @@ class RuleBasedSentimentAnalyzer:
     def _initialize_rules(self) -> List[EmotionRule]:
         """感情ルールの初期化"""
         return [
+            # 複合ネガティブ表現を追加（優先度高）
+            EmotionRule(r'(うまくいかな|上手くいかな|うまく行かな)', -0.7, 'failure', 1.3),
+            EmotionRule(r'(ため息|ためいき|タメイキ)', -0.6, 'sigh', 1.2),
+            EmotionRule(r'(心が重|気が重|心がおも|気がおも)', -0.7, 'heavy_heart', 1.3),
+            EmotionRule(r'(つまらな|面白くな|楽しくな)', -0.6, 'boring', 1.2),
+            EmotionRule(r'(できな|出来な)', -0.5, 'cannot', 1.0),
+            
             # ポジティブルール（基本感情語）
             EmotionRule(r'(嬉し|うれし|ウレシ)', 0.8, 'joy', 1.5),
             EmotionRule(r'(楽し|たのし|タノシ)', 0.8, 'joy', 1.5),
@@ -171,6 +178,36 @@ class RuleBasedSentimentAnalyzer:
     
     def _detect_negation(self, text: str) -> bool:
         """否定語の検出"""
+        # ネガティブな複合表現（これらは否定語として扱わない）
+        negative_compound_patterns = [
+            r'うまくいかな',
+            r'上手くいかな',
+            r'うまく行かな',
+            r'失敗',
+            r'だめ',
+            r'ダメ',
+            r'無理',
+            r'できな',
+            r'出来な',
+            r'分からな',
+            r'わからな',
+            r'知らな',
+            r'しらな',
+            r'つまらな',
+            r'面白くな',
+            r'楽しくな',
+            r'嬉しくな',
+            r'良くな',
+            r'よくな',
+        ]
+        
+        # まず、ネガティブな複合表現をチェック
+        for pattern in negative_compound_patterns:
+            if re.search(pattern, text):
+                # これらは「否定語」ではなく「ネガティブ表現」として扱う
+                return False
+        
+        # 通常の否定語検出
         for pattern in self.negation_patterns:
             if re.search(pattern, text):
                 return True

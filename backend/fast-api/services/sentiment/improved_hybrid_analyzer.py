@@ -124,12 +124,12 @@ class ImprovedHybridAnalyzer:
         
         # 否定語の適用（より自然な反転）
         if has_negation:
-            if modified_score > 0:
+            if base_score > 0:
                 # ポジティブな感情の否定はネガティブに
-                modified_score *= -0.7
+                base_score = -base_score * 0.5
             else:
-                # ネガティブな感情の否定は軽いポジティブに
-                modified_score = abs(modified_score) * 0.3
+                # ネガティブな感情の否定は無視（二重否定を避ける）
+                pass
         
         return base_score
     
