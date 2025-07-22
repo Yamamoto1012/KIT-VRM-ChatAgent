@@ -289,6 +289,33 @@ async def process_voice_mode_answer(request: QueryRequest):
         logger.error(f"Error processing response: {str(e)}")
         raise HTTPException(status_code=500, detail="Error processing response")
 
+@router.post("/query_non_streaming")
+async def process_query_non_streaming(request: QueryRequest):
+    """
+    ユーザークエリを処理する（非ストリーミング専用）
+    """
+    try:
+        inputs = {
+            "user_input": request.query,
+            "language": request.language or "ja",
+            "stream": False
+        }
+        
+        # 強制的に非ストリーミングで処理
+        answer = await call_dify_workflow_blocking(
+            settings.dify_workflow_id,
+            inputs,
+            settings.llm_timeout
+        )
+        return QueryResponse(answer=answer)
+            
+    except httpx.RequestError as e:
+        logger.error(f"API request failed: {str(e)}")
+        raise HTTPException(status_code=503, detail="Could not connect to Dify service")
+    except Exception as e:
+        logger.error(f"Error processing response: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error processing response")
+
 @router.get("/health")
 async def health_check():
     """

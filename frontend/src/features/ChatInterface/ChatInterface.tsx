@@ -13,6 +13,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
+import { isStreamingModeAtom } from "../../store/appStateAtoms";
 import {
 	addMessageAtom,
 	addMessageWithIdAtom,
@@ -31,7 +32,11 @@ import { useSentiment } from "../../hooks/useSentiment";
 import { useStreamingTTS } from "../../hooks/useStreamingTTS";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 
-import { buildPrompt, generateTextStream } from "../../services/llmService";
+import {
+	buildPrompt,
+	generateTextNonStreaming,
+	generateTextStream,
+} from "../../services/llmService";
 
 import type { VRMWrapperHandle } from "../VRM/VRMWrapper/VRMWrapper";
 
@@ -51,6 +56,7 @@ export const ChatInterface = forwardRef<
 	const { isMobile } = useResponsive();
 	const [messages, setMessages] = useAtom(messagesAtom);
 	const [currentLanguage] = useAtom(currentLanguageAtom);
+	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isRecording] = useAtom(isRecordingAtom);
@@ -83,26 +89,29 @@ export const ChatInterface = forwardRef<
 	const abortRef = useRef<AbortController | null>(null);
 	const isGeneratingRef = useRef(false);
 
-	const animateText = useCallback(() => {
-		if (!isAnimating.current || streamBuffer.current.length === 0) {
-			isAnimating.current = false;
-			return;
-		}
+	const animateText = useCallback(
+		(speed = 30) => {
+			if (!isAnimating.current || streamBuffer.current.length === 0) {
+				isAnimating.current = false;
+				return;
+			}
 
-		const char = streamBuffer.current.substring(0, 1);
-		streamBuffer.current = streamBuffer.current.substring(1);
-		currentDisplayText.current += char;
+			const char = streamBuffer.current.substring(0, 1);
+			streamBuffer.current = streamBuffer.current.substring(1);
+			currentDisplayText.current += char;
 
-		setMessages((prev) =>
-			prev.map((msg) =>
-				msg.id === lastMessageId.current
-					? { ...msg, text: currentDisplayText.current }
-					: msg,
-			),
-		);
+			setMessages((prev) =>
+				prev.map((msg) =>
+					msg.id === lastMessageId.current
+						? { ...msg, text: currentDisplayText.current }
+						: msg,
+				),
+			);
 
-		setTimeout(() => requestAnimationFrame(animateText), 30);
-	}, [setMessages]);
+			setTimeout(() => requestAnimationFrame(() => animateText(speed)), speed);
+		},
+		[setMessages],
+	);
 
 	const stopAllAudio = useCallback(() => {
 		stopLegacyTTS();
@@ -166,71 +175,115 @@ export const ChatInterface = forwardRef<
 			id: aiMessageId,
 			text: "",
 			isUser: false,
-			isStreaming: true,
+			isStreaming: isStreamingMode,
 		});
 
 		streamingTTS.clearQueue();
 
 		try {
 			const payloadQuery = buildPrompt(trimmed);
-			let accumulatedText = "";
 
-			await generateTextStream(
-				payloadQuery,
-				undefined,
-				controller.signal,
-				(chunk) => {
-					if (chunk.type === "content" && chunk.content) {
-						const newText = chunk.content;
-						const diff = newText.startsWith(accumulatedText)
-							? newText.substring(accumulatedText.length)
-							: newText;
+			if (isStreamingMode) {
+				// ストリーミングモード
+				let accumulatedText = "";
 
-						if (diff) {
-							accumulatedText += diff;
-							streamBuffer.current += diff;
-							if (!isAnimating.current) {
-								isAnimating.current = true;
-								animateText();
+				await generateTextStream(
+					payloadQuery,
+					undefined,
+					controller.signal,
+					(chunk) => {
+						if (chunk.type === "content" && chunk.content) {
+							const newText = chunk.content;
+							const diff = newText.startsWith(accumulatedText)
+								? newText.substring(accumulatedText.length)
+								: newText;
+
+							if (diff) {
+								accumulatedText += diff;
+								streamBuffer.current += diff;
+								if (!isAnimating.current) {
+									isAnimating.current = true;
+									animateText(); // デフォルト速度（30ms）を使用
+								}
+								streamingTTS.addChunk(diff);
 							}
-							streamingTTS.addChunk(diff);
+						} else if (chunk.type === "done") {
+							streamingTTS.finalize();
+							analyzeSentiment(accumulatedText);
+
+							const waitForAnimation = () => {
+								if (isAnimating.current || streamBuffer.current.length > 0) {
+									setTimeout(waitForAnimation, 100);
+									return;
+								}
+								updateMessage({
+									id: aiMessageId,
+									updates: { isStreaming: false },
+								});
+								setIsLoading(false);
+								isGeneratingRef.current = false;
+							};
+							waitForAnimation();
+
+							// Fallback logic
+							setTimeout(() => {
+								const { isPlaying, isGenerating, queue } = streamingTTSState;
+								if (
+									!isPlaying &&
+									!isGenerating &&
+									queue.length === 0 &&
+									accumulatedText.trim()
+								) {
+									console.warn(
+										"Streaming TTS did not start. Using legacy TTS.",
+									);
+									speak(accumulatedText);
+								}
+							}, 2000);
 						}
-					} else if (chunk.type === "done") {
-						streamingTTS.finalize();
-						analyzeSentiment(accumulatedText);
+					},
+					"/api/llm/query",
+					currentLanguage,
+				);
+			} else {
+				// 非ストリーミングモード
+				const response = await generateTextNonStreaming(
+					payloadQuery,
+					undefined,
+					controller.signal,
+					currentLanguage,
+				);
 
-						const waitForAnimation = () => {
-							if (isAnimating.current || streamBuffer.current.length > 0) {
-								setTimeout(waitForAnimation, 100);
-								return;
-							}
-							updateMessage({
-								id: aiMessageId,
-								updates: { isStreaming: false },
-							});
-							setIsLoading(false);
-							isGeneratingRef.current = false;
-						};
-						waitForAnimation();
+				// レスポンスを文字単位でアニメーション表示
+				streamBuffer.current = response;
+				currentDisplayText.current = "";
 
-						// Fallback logic
-						setTimeout(() => {
-							const { isPlaying, isGenerating, queue } = streamingTTSState;
-							if (
-								!isPlaying &&
-								!isGenerating &&
-								queue.length === 0 &&
-								accumulatedText.trim()
-							) {
-								console.warn("Streaming TTS did not start. Using legacy TTS.");
-								speak(accumulatedText);
-							}
-						}, 2000);
+				if (!isAnimating.current) {
+					isAnimating.current = true;
+					animateText(20); // 非ストリーミングモードでは少し速めに表示
+				}
+
+				// 非ストリーミングモードでは通常のTTSを使用
+				speak(response);
+
+				// センチメント分析
+				analyzeSentiment(response);
+
+				// アニメーション完了を待ってからローディング状態を解除
+				const waitForAnimation = () => {
+					if (isAnimating.current || streamBuffer.current.length > 0) {
+						setTimeout(waitForAnimation, 100);
+						return;
 					}
-				},
-				"/api/llm/query",
-				currentLanguage,
-			);
+					updateMessage({
+						id: aiMessageId,
+						updates: { isStreaming: false },
+					});
+					setIsLoading(false);
+					isGeneratingRef.current = false;
+				};
+				waitForAnimation();
+			}
 		} catch (err) {
 			stopAllAudio();
 			isAnimating.current = false;
@@ -281,7 +334,25 @@ export const ChatInterface = forwardRef<
 		});
 	};
 
+	const handleToggleStreamingMode = () => {
+		setIsStreamingMode((prev) => !prev);
+	};
+
 	const commonProps = {
+		messages,
+		inputValue: input,
+		isThinking: isLoading,
+		isRecording,
+		isStreamingMode,
+		onInputChange: handleInputChange,
+		onKeyDown: handleKeyDown,
+		onSend: handleSend,
+		onToggleRecording: handleToggleRecording,
+		onToggleStreamingMode: handleToggleStreamingMode,
+		messagesEndRef,
+	};
+
+	const desktopProps = {
 		messages,
 		inputValue: input,
 		isThinking: isLoading,
@@ -289,14 +360,9 @@ export const ChatInterface = forwardRef<
 		onInputChange: handleInputChange,
 		onKeyDown: handleKeyDown,
 		onSend: handleSend,
-		onToggleRecording: handleToggleRecording,
-		messagesEndRef,
-	};
-
-	const desktopProps = {
-		...commonProps,
 		onSelect: handleSelect,
 		onReset: handleReset,
+		onToggleRecording: handleToggleRecording,
 		onStop: () => {
 			abortRef.current?.abort();
 			stopAllAudio();
@@ -305,6 +371,7 @@ export const ChatInterface = forwardRef<
 			streamBuffer.current = "";
 			currentDisplayText.current = "";
 		},
+		messagesEndRef,
 	};
 
 	return isMobile ? (

@@ -1,5 +1,6 @@
 import {
 	isMutedAtom,
+	isStreamingModeAtom,
 	showInfoAtom,
 	showVoiceChatAtom,
 } from "@/store/appStateAtoms";
@@ -18,6 +19,7 @@ export const ControlButtons: FC = () => {
 	// グローバル状態の管理
 	const [showInfo, setShowInfo] = useAtom(showInfoAtom);
 	const [isMuted, setIsMuted] = useAtom(isMutedAtom);
+	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
 	const [, setShowVoiceChat] = useAtom(showVoiceChatAtom);
 	const [, setLanguageSelectorOpen] = useAtom(languageSelectorOpenAtom);
 
@@ -46,16 +48,23 @@ export const ControlButtons: FC = () => {
 	 */
 	const handleOpenVoiceChat = () => setShowVoiceChat(true);
 
+	/**
+	 * ストリーミングモードを切り替える
+	 */
+	const handleToggleStreamingMode = () => setIsStreamingMode(!isStreamingMode);
+
 	return (
 		<>
 			<ControlButtonsView
 				showInfo={showInfo}
 				isMuted={isMuted}
+				isStreamingMode={isStreamingMode}
 				onOpenLanguageSelector={handleOpenLanguageSelector}
 				onToggleInfo={handleToggleInfo}
 				onToggleMute={handleToggleMute}
 				onOpenVoiceChat={handleOpenVoiceChat}
 				onCloseInfo={handleCloseInfo}
+				onToggleStreamingMode={handleToggleStreamingMode}
 			/>
 			{/* 言語選択ダイアログ */}
 			<LanguageSelector />

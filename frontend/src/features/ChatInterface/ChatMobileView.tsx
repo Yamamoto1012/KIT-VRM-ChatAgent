@@ -1,6 +1,6 @@
 import type { Message } from "@/store/chatAtoms";
 import { motion } from "framer-motion";
-import { Mic, MicOff, Send } from "lucide-react";
+import { Mic, MicOff, Send, Zap, ZapOff } from "lucide-react";
 import type React from "react";
 
 export type ChatMobileViewProps = {
@@ -8,10 +8,12 @@ export type ChatMobileViewProps = {
 	inputValue: string;
 	isThinking: boolean;
 	isRecording: boolean;
+	isStreamingMode: boolean;
 	onInputChange: React.ChangeEventHandler<HTMLTextAreaElement>;
 	onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement>;
 	onSend: () => void;
 	onToggleRecording: () => void;
+	onToggleStreamingMode: () => void;
 	messagesEndRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -32,10 +34,12 @@ export const ChatMobileView: React.FC<ChatMobileViewProps> = ({
 	inputValue,
 	isThinking,
 	isRecording,
+	isStreamingMode,
 	onInputChange,
 	onKeyDown,
 	onSend,
 	onToggleRecording,
+	onToggleStreamingMode,
 	messagesEndRef,
 }) => {
 	// メッセージがある場合のみメッセージエリアを表示
@@ -103,6 +107,28 @@ export const ChatMobileView: React.FC<ChatMobileViewProps> = ({
 					className="px-4"
 				>
 					<div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-3">
+						{/* ストリーミングモードインジケーター */}
+						<div className="flex justify-center mb-2">
+							<motion.button
+								whileTap={{ scale: 0.95 }}
+								onClick={onToggleStreamingMode}
+								className="flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+							>
+								{isStreamingMode ? (
+									<>
+										<Zap className="h-3 w-3 text-green-600" />
+										<span className="text-xs text-gray-700">
+											ストリーミング
+										</span>
+									</>
+								) : (
+									<>
+										<ZapOff className="h-3 w-3 text-gray-500" />
+										<span className="text-xs text-gray-700">標準</span>
+									</>
+								)}
+							</motion.button>
+						</div>
 						<div className="flex items-end gap-2">
 							{/* メッセージ入力欄 */}
 							<div className="flex-1">

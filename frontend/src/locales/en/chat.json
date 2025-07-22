@@ -26,5 +26,8 @@
 	"askUniversityQuestion": "Ask me about the university",
 	"askAnything": "Feel free to ask me anything.",
 	"questionsConsultations": "Questions and consultations are welcome.",
-	"thinking": "Thinking..."
+	"thinking": "Thinking...",
+	"streamingMode": "Streaming Mode",
+	"nonStreamingMode": "Non-Streaming Mode",
+	"toggleStreamingMode": "Toggle Streaming Mode"
 }

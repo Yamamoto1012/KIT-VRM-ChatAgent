@@ -18,6 +18,9 @@ export const isThinkingAtom = atom<boolean>(false);
 // ActionPromptからの質問かどうかを示すatom
 export const isActionPromptQuestionAtom = atom<boolean>(false);
 
+// ストリーミングモードの有効/無効を示すatom（デフォルトはストリーミング有効）
+export const isStreamingModeAtom = atom<boolean>(true);
+
 // アプリ全体の状態をまとめて取得するatom
 export const appStateAtom = atom((get) => {
 	return {
@@ -27,5 +30,6 @@ export const appStateAtom = atom((get) => {
 		showVoiceChat: get(showVoiceChatAtom),
 		isThinking: get(isThinkingAtom),
 		isActionPromptQuestion: get(isActionPromptQuestionAtom),
+		isStreamingMode: get(isStreamingModeAtom),
 	};
 });

@@ -26,5 +26,8 @@
 	"askUniversityQuestion": "大学について質問してください",
 	"askAnything": "何でもお気軽にお聞きください。",
 	"questionsConsultations": "質問・相談お待ちしています。",
-	"thinking": "考えています..."
+	"thinking": "考えています...",
+	"streamingMode": "ストリーミングモード",
+	"nonStreamingMode": "非ストリーミングモード",
+	"toggleStreamingMode": "ストリーミングモードを切り替え"
 }

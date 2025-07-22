@@ -1,4 +1,4 @@
-import { Languages, Mic2, Volume2, VolumeX } from "lucide-react";
+import { Languages, Mic2, Volume2, VolumeX, Zap, ZapOff } from "lucide-react";
 import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "../IconButton/IconButton";
@@ -14,6 +14,11 @@ export type ControlButtonsViewProps = {
 	 * ミュート状態
 	 */
 	isMuted: boolean;
+
+	/**
+	 * ストリーミングモード状態
+	 */
+	isStreamingMode: boolean;
 
 	/**
 	 * 言語選択ボタンを押した際のハンドラー
@@ -39,6 +44,11 @@ export type ControlButtonsViewProps = {
 	 * 情報パネルを閉じるハンドラー
 	 */
 	onCloseInfo: () => void;
+
+	/**
+	 * ストリーミングモード切替のハンドラー
+	 */
+	onToggleStreamingMode: () => void;
 };
 
 /**
@@ -53,11 +63,13 @@ export type ControlButtonsViewProps = {
 export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 	showInfo,
 	isMuted,
+	isStreamingMode,
 	// onToggleInfo,
 	onOpenLanguageSelector,
 	onToggleMute,
 	onOpenVoiceChat,
 	onCloseInfo,
+	onToggleStreamingMode,
 }) => {
 	const { t } = useTranslation("chat");
 	return (
@@ -89,8 +101,20 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 					/>
 				</div>
 
-				{/* 言語選択ボタン */}
+				{/* ストリーミングモード切り替えボタン */}
 				<div className="order-1 md:order-3">
+					<IconButton
+						icon={isStreamingMode ? Zap : ZapOff}
+						onClick={onToggleStreamingMode}
+						aria-label={
+							isStreamingMode ? t("streamingMode") : t("nonStreamingMode")
+						}
+						className="h-11 w-11 md:h-12 md:w-12"
+					/>
+				</div>
+
+				{/* 言語選択ボタン */}
+				<div className="order-0 md:order-4">
 					<IconButton
 						icon={Languages}
 						onClick={onOpenLanguageSelector}

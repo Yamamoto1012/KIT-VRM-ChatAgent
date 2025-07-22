@@ -115,7 +115,57 @@ export async function generateTextStream(
 }
 
 /**
- * LLM APIにテキストクエリを送信し、生成されたテキストを取得する
+ * LLM APIにテキストクエリを送信し、生成されたテキストを取得する（非ストリーミング専用）
+ * @param query ユーザーからの入力テキスト
+ * @param conversationId 会話ID
+ * @param signal APIリクエストを中止するためのAbortSignal
+ * @param language 応答言語
+ * @returns 生成されたテキスト応答
+ */
+export async function generateTextNonStreaming(
+	query: string,
+	conversationId?: string,
+	signal?: AbortSignal,
+	language: SupportedLanguage = "ja",
+): Promise<string> {
+	const requestBody = {
+		query,
+		conversation_id: conversationId,
+		stream: false,
+		language,
+	};
+
+	try {
+		const response = await fetch("/api/llm/query_non_streaming", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestBody),
+			signal,
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			throw new Error(
+				`API error: ${response.status} ${response.statusText} - ${errorText}`,
+			);
+		}
+
+		const result = await response.json();
+		return result.answer || "応答を生成できませんでした。";
+	} catch (error) {
+		if (error instanceof Error && error.name === "AbortError") {
+			console.log("Non-streaming generation aborted.");
+			throw error;
+		}
+		console.error("Error generating text (non-streaming):", error);
+		throw error;
+	}
+}
+
+/**
+ * LLM APIにテキストクエリを送信し、生成されたテキストを取得する（ストリーミング版の互換性用）
  * @param query ユーザーからの入力テキスト
  * @param conversationId 会話ID
  * @param signal APIリクエストを中止するためのAbortSignal
