@@ -52,7 +52,7 @@ const DEFAULT_CAMERA_CONFIG: CameraConfig = {
 export const MODEL_CONFIGS: ModelConfig[] = [
 	{
 		id: "kit-2",
-		name: "KIT 2.0",
+		name: "AI沢みのり",
 		description: "AI沢みのり",
 		vrmUrl: "/Model/KIT_2.0.vrm",
 		thumbnailUrl: "/thumbnails/kit2.png",
@@ -68,7 +68,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 		vrmUrl: "/Model/vj_takagi.vrm",
 		thumbnailUrl: "/thumbnails/vj-ta.png",
 		speakerId: 888753760,
-		defaultMotion: "/Motion/StandingIdle.vrma",
+		defaultMotion: "/Motion/VRMA_06.vrma",
 		modelRotation: [0, Math.PI, 0],
 		cameraConfig: {
 			...DEFAULT_CAMERA_CONFIG,
