@@ -8,11 +8,12 @@ import {
 	requestTTS,
 	revokeObjectURL,
 } from "@/lib/utils/audio";
+import { selectedModelConfigAtom } from "@/store/modelAtoms";
+import { useAtom } from "jotai";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 const TTS_CONSTANTS = {
-	DEFAULT_SPEAKER_ID: 888753760,
 	DEFAULT_FORMAT: "wav" as const,
 	EMPTY_TEXT_ERROR: "テキストが入力されていません",
 	AUDIO_ERROR_PREFIX: "音声再生エラー: ",
@@ -182,11 +183,10 @@ const executeAudioPlayback = async (
  * @returns TTSの状態とアクションを提供するオブジェクト
  */
 export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
-	const {
-		defaultSpeakerId = TTS_CONSTANTS.DEFAULT_SPEAKER_ID,
-		defaultFormat = TTS_CONSTANTS.DEFAULT_FORMAT,
-		vrmWrapperRef,
-	} = options;
+	const [modelConfig] = useAtom(selectedModelConfigAtom);
+
+	const { defaultFormat = TTS_CONSTANTS.DEFAULT_FORMAT, vrmWrapperRef } =
+		options;
 
 	const { t } = useTranslation("voice");
 	const [state, dispatch] = useReducer(ttsReducer, initialState);
@@ -222,10 +222,7 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 	 * @param speakerId - 使用するスピーカーのID
 	 */
 	const speak = useCallback(
-		async (
-			text: string,
-			speakerId: number | string = defaultSpeakerId,
-		): Promise<void> => {
+		async (text: string, speakerId?: number | string): Promise<void> => {
 			const trimmedText = text.trim();
 
 			// 早期return: 無効な入力を即座に処理
@@ -246,9 +243,12 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 				// リクエストキャンセル機能のため、新しいAbortControllerを作成
 				abortControllerRef.current = new AbortController();
 
+				// speakerIdが指定されていない場合は、現在選択されているモデルのspeakerIdを使用
+				const finalSpeakerId = speakerId ?? modelConfig.speakerId;
+
 				const ttsRequest: TTSRequest = {
 					text: trimmedText,
-					speakerId,
+					speakerId: finalSpeakerId,
 					format: defaultFormat,
 				};
 
@@ -283,7 +283,7 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 				cleanup();
 			}
 		},
-		[defaultSpeakerId, defaultFormat, cleanup, vrmWrapperRef, t],
+		[modelConfig.speakerId, defaultFormat, cleanup, vrmWrapperRef, t],
 	);
 
 	/**

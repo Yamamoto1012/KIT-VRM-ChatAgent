@@ -71,7 +71,6 @@ export const useStreamingTTS = (
 	const [modelConfig] = useAtom(selectedModelConfigAtom);
 
 	const {
-		defaultSpeakerId = modelConfig.speakerId,
 		defaultFormat = "wav",
 		vrmWrapperRef,
 		maxQueueSize = 20, // キューの最大サイズ
@@ -174,7 +173,7 @@ export const useStreamingTTS = (
 			try {
 				const ttsRequest: TTSRequest = {
 					text: item.text,
-					speakerId: defaultSpeakerId,
+					speakerId: modelConfig.speakerId,
 					format: defaultFormat,
 				};
 
@@ -199,7 +198,7 @@ export const useStreamingTTS = (
 				};
 			}
 		},
-		[defaultSpeakerId, defaultFormat, t],
+		[modelConfig.speakerId, defaultFormat, t],
 	);
 
 	/**

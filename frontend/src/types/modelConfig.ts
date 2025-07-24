@@ -81,7 +81,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 		description: "FRIT系モデル",
 		vrmUrl: "/Model/FRIT_256.vrm",
 		thumbnailUrl: "/thumbnails/frit256.png",
-		speakerId: 888753760,
+		speakerId: 730512896,
 		defaultMotion: "/Motion/StandingIdle.vrma",
 		modelRotation: [0, 0, 0],
 		cameraConfig: {
