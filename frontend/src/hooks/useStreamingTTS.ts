@@ -8,6 +8,8 @@ import {
 	requestTTS,
 	revokeObjectURL,
 } from "@/lib/utils/audio";
+import { selectedModelConfigAtom } from "@/store/modelAtoms";
+import { useAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -27,7 +29,7 @@ export type AudioQueueItem = {
  * ストリーミングTTSフックの設定オプション
  */
 export type UseStreamingTTSOptions = {
-	defaultSpeakerId?: number;
+	defaultSpeakerId?: number | string;
 	defaultFormat?: AudioFormat;
 	vrmWrapperRef?: React.RefObject<VRMWrapperHandle | null>;
 	maxQueueSize?: number;
@@ -65,8 +67,11 @@ export type UseStreamingTTSReturn = {
 export const useStreamingTTS = (
 	options: UseStreamingTTSOptions = {},
 ): UseStreamingTTSReturn => {
+	// 選択されたモデル設定を取得
+	const [modelConfig] = useAtom(selectedModelConfigAtom);
+
 	const {
-		defaultSpeakerId = 888753760,
+		defaultSpeakerId = modelConfig.speakerId,
 		defaultFormat = "wav",
 		vrmWrapperRef,
 		maxQueueSize = 20, // キューの最大サイズ

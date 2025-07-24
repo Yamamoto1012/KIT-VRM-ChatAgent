@@ -1,0 +1,10 @@
+{
+	"selector": {
+		"title": "モデル選択",
+		"description": "使用するVRMモデルを選択してください",
+		"current": "現在のモデル"
+	},
+	"button": {
+		"switchModel": "モデル切り替え"
+	}
+}

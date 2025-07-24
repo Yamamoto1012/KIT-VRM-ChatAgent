@@ -1,10 +1,13 @@
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence } from "framer-motion";
+import { useAtom } from "jotai";
 import type { FC, RefObject } from "react";
 import type { AudioStreamingState } from "../../../store/chatAtoms";
+import { selectedModelConfigAtom } from "../../../store/modelAtoms";
 import { ThinkingIndicator } from "../../ThinkingIndicator/ThinkingIndicator";
 import { VRMWrapper } from "../VRMWrapper/VRMWrapper";
 import type { VRMWrapperHandle } from "../VRMWrapper/VRMWrapper";
+import { CameraController } from "./CameraController";
 
 /**
  * VRMContainerViewのProps
@@ -43,7 +46,32 @@ export type VRMContainerViewProps = {
 };
 
 // レスポンシブカメラ設定を計算する関数
-const getCameraSettings = (categoryDepth: number, isMobile = false) => {
+const getCameraSettings = (
+	categoryDepth: number,
+	isMobile = false,
+	modelCameraConfig?: import("../../../types/modelConfig").CameraConfig,
+) => {
+	// モデル固有の設定がある場合はそれを使用
+	if (modelCameraConfig) {
+		const basePosition = isMobile
+			? modelCameraConfig.mobilePosition
+			: modelCameraConfig.desktopPosition;
+		return {
+			fov: modelCameraConfig.fov,
+			position: [
+				basePosition[0],
+				basePosition[1],
+				categoryDepth >= 2 ? basePosition[2] - 0.5 : basePosition[2],
+			] as [number, number, number],
+			rotation: [
+				modelCameraConfig.rotation[0],
+				modelCameraConfig.rotation[1] + (categoryDepth >= 2 ? Math.PI / 8 : 0),
+				modelCameraConfig.rotation[2],
+			] as [number, number, number],
+		};
+	}
+
+	// デフォルトのカメラ設定（フォールバック）
 	if (isMobile) {
 		// モバイル用カメラ設定
 		return {
@@ -89,10 +117,17 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 	audioStreamingState,
 	onThinkingStateChange,
 }) => {
+	// 選択されたモデル設定を取得
+	const [modelConfig] = useAtom(selectedModelConfigAtom);
+
 	// 画面サイズを動的に検出（簡易版）
 	// より正確にはuseMediaQueryなどのフックを使用することもできます
 	const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-	const cameraSettings = getCameraSettings(categoryDepth, isMobile);
+	const cameraSettings = getCameraSettings(
+		categoryDepth,
+		isMobile,
+		modelConfig.cameraConfig,
+	);
 
 	return (
 		<>
@@ -101,15 +136,16 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 				<Canvas
 					flat
 					camera={{
-						fov: cameraSettings.fov,
+						fov: 40,
 						near: 0.01,
 						far: 2000,
-						position: cameraSettings.position,
-						rotation: cameraSettings.rotation,
+						position: [0, 1.45, 1],
 					}}
 				>
+					<CameraController cameraSettings={cameraSettings} />
 					<gridHelper />
 					<VRMWrapper
+						key={modelConfig.id}
 						categoryDepth={categoryDepth}
 						isMuted={isMuted}
 						audioStreamingState={audioStreamingState}

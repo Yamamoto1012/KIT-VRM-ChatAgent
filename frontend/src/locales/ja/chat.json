@@ -29,5 +29,6 @@
 	"thinking": "考えています...",
 	"streamingMode": "ストリーミングモード",
 	"nonStreamingMode": "非ストリーミングモード",
-	"toggleStreamingMode": "ストリーミングモードを切り替え"
+	"toggleStreamingMode": "ストリーミングモードを切り替え",
+	"selectModel": "モデルを選択"
 }

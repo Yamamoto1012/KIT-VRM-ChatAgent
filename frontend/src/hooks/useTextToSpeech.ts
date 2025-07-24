@@ -23,7 +23,7 @@ const TTS_CONSTANTS = {
  * TTS フックの設定オプション
  */
 export type UseTTSOptions = {
-	defaultSpeakerId?: number;
+	defaultSpeakerId?: number | string;
 	defaultFormat?: AudioFormat;
 	vrmWrapperRef?: React.RefObject<VRMWrapperHandle | null>;
 };
@@ -54,7 +54,7 @@ type TTSAction =
  */
 export interface UseTTSReturn {
 	readonly state: TTSState;
-	readonly speak: (text: string, speakerId?: number) => Promise<void>;
+	readonly speak: (text: string, speakerId?: number | string) => Promise<void>;
 	readonly stop: () => void;
 	readonly isReady: boolean;
 }
@@ -224,7 +224,7 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 	const speak = useCallback(
 		async (
 			text: string,
-			speakerId: number = defaultSpeakerId,
+			speakerId: number | string = defaultSpeakerId,
 		): Promise<void> => {
 			const trimmedText = text.trim();
 

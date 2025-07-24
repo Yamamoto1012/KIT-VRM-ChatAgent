@@ -2,7 +2,7 @@ export type AudioFormat = "wav" | "mp3" | "ogg";
 
 export type TTSRequest = {
 	text: string;
-	speakerId: number;
+	speakerId: number | string;
 	format: AudioFormat;
 };
 
@@ -32,11 +32,18 @@ export const validateTTSRequest = (
 		errors.push(t("textTooLong"));
 	}
 
-	if (
-		request.speakerId &&
-		(request.speakerId < 0 || !Number.isInteger(request.speakerId))
-	) {
-		errors.push(t("speakerIdInvalid"));
+	if (request.speakerId !== undefined && request.speakerId !== null) {
+		if (typeof request.speakerId === "number") {
+			if (request.speakerId < 0 || !Number.isInteger(request.speakerId)) {
+				errors.push(t("speakerIdInvalid"));
+			}
+		} else if (typeof request.speakerId === "string") {
+			if (request.speakerId.trim().length === 0) {
+				errors.push(t("speakerIdInvalid"));
+			}
+		} else {
+			errors.push(t("speakerIdInvalid"));
+		}
 	}
 
 	if (request.format && !["wav", "mp3", "ogg"].includes(request.format)) {
