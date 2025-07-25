@@ -56,6 +56,10 @@ type TTSAction =
 export interface UseTTSReturn {
 	readonly state: TTSState;
 	readonly speak: (text: string, speakerId?: number | string) => Promise<void>;
+	readonly speakProgressive: (
+		text: string,
+		speakerId?: number | string,
+	) => Promise<void>;
 	readonly stop: () => void;
 	readonly isReady: boolean;
 }
@@ -287,6 +291,41 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 	);
 
 	/**
+	 * テキストを文章単位で分割して逐次音声再生する
+	 * @param text - 音声化するテキスト
+	 * @param speakerId - 使用するスピーカーのID
+	 */
+	const speakProgressive = useCallback(
+		async (text: string, speakerId?: number | string): Promise<void> => {
+			const trimmedText = text.trim();
+
+			if (!trimmedText) {
+				dispatch({
+					type: "SET_ERROR",
+					payload: { error: new Error(TTS_CONSTANTS.EMPTY_TEXT_ERROR) },
+				});
+				return;
+			}
+
+			// 文章を句点で分割（日本語対応）
+			const sentences = trimmedText.split(/[。！？]/);
+
+			for (const sentence of sentences) {
+				const trimmedSentence = sentence.trim();
+				if (trimmedSentence) {
+					try {
+						await speak(trimmedSentence, speakerId);
+					} catch (error) {
+						console.error("Progressive TTS error:", error);
+						// エラーが発生しても次の文章の処理を続行
+					}
+				}
+			}
+		},
+		[speak],
+	);
+
+	/**
 	 * 再生中の音声を停止
 	 * ユーザーからの明示的な停止要求に対応
 	 */
@@ -303,6 +342,7 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 	return {
 		state,
 		speak,
+		speakProgressive,
 		stop,
 		isReady: !state.isLoading && !state.error,
 	} as const;
