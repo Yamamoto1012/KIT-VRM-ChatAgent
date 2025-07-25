@@ -1,3 +1,5 @@
+import { getSpeechRecognitionLanguage } from "@/lib/utils";
+import { currentLanguageAtom } from "@/store/languageAtoms";
 import type {
 	WebSpeechRecognition,
 	WebSpeechRecognitionErrorEvent,
@@ -87,8 +89,12 @@ export const toggleRecordingAtom = atom(
 
 			speechRecognition = new SpeechRecognition();
 
+			// 現在の言語設定を取得して音声認識の言語を設定
+			const currentLanguage = get(currentLanguageAtom);
+			const recognitionLang = getSpeechRecognitionLanguage(currentLanguage);
+
 			// 設定
-			speechRecognition.lang = "ja-JP"; // 日本語に設定
+			speechRecognition.lang = recognitionLang; // 現在の言語に応じて設定
 			speechRecognition.interimResults = true; // 途中経過も取得
 			speechRecognition.continuous = true; // 連続的な認識を有効に
 
