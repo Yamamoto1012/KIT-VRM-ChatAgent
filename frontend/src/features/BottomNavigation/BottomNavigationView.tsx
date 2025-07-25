@@ -1,3 +1,4 @@
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import type { NavigationScreen } from "@/store/navigationAtoms";
 import { AnimatePresence, motion } from "framer-motion";
 import { Info, MessageCircle, MessageSquare, Mic } from "lucide-react";
@@ -59,6 +60,7 @@ export const BottomNavigationView: FC<BottomNavigationViewProps> = ({
 	onScreenChange,
 }) => {
 	const { t } = useTranslation("navigation");
+	const { classes } = useCharacterTheme();
 	return (
 		<AnimatePresence>
 			{isVisible && (
@@ -87,13 +89,13 @@ export const BottomNavigationView: FC<BottomNavigationViewProps> = ({
 										<div className="flex flex-col items-center">
 											<Icon
 												className={`h-5 w-5 mb-1 ${
-													isActive ? "text-[#b3cfad]" : "text-gray-500"
+													isActive ? classes.primary.text : "text-gray-500"
 												}`}
 											/>
 											<span
 												className={`text-xs ${
 													isActive
-														? "text-[#b3cfad] font-medium"
+														? `${classes.primary.text} font-medium`
 														: "text-gray-500"
 												}`}
 											>

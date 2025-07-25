@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import type { Message } from "@/store/chatAtoms";
 import { selectedModelConfigAtom } from "@/store/modelAtoms";
 import { useAtomValue } from "jotai";
@@ -13,6 +14,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 	message,
 }) => {
 	const modelConfig = useAtomValue(selectedModelConfigAtom);
+	const { colors, classes } = useCharacterTheme();
 	const aiAvatarSrc = modelConfig.thumbnailUrl ?? "/chatIcon.png";
 	return (
 		<div
@@ -24,9 +26,11 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 				{message.isUser ? (
 					<Avatar
 						className="h-10 w-10 rounded-full border-2 border-white"
-						style={{ backgroundColor: "#f0f0f0" }}
+						style={{ backgroundColor: colors.surface }}
 					>
-						<AvatarFallback className="bg-gray-200 text-gray-600">
+						<AvatarFallback
+							className={`${classes.surface.bg} ${classes.neutral.text}`}
+						>
 							{/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -45,16 +49,22 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 				) : (
 					<Avatar
 						className="h-10 w-10 rounded-full border-2 border-white"
-						style={{ backgroundColor: "#d9ca77" }}
+						style={{ backgroundColor: colors.primary }}
 					>
 						<AvatarImage src={aiAvatarSrc} />
-						<AvatarFallback>KIT</AvatarFallback>
+						<AvatarFallback
+							className={`${classes.primary.bg} text-white font-medium`}
+						>
+							{modelConfig.name.slice(0, 2)}
+						</AvatarFallback>
 					</Avatar>
 				)}
 			</div>
 			<div
 				className={`rounded-2xl p-3 px-4 max-w-[80%] shadow-sm ${
-					message.isUser ? "bg-green-100 text-left" : "bg-white text-left"
+					message.isUser
+						? `${classes.secondary.bg} text-left`
+						: "bg-white text-left"
 				} ${message.isStreaming ? "animate-pulse-subtle" : ""}`}
 			>
 				<div className="text-gray-800 relative">

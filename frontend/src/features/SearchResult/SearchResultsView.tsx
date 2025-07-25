@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import { motion } from "framer-motion";
 import { ArrowLeft, Send } from "lucide-react";
 import type React from "react";
@@ -33,6 +34,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 	inputRef,
 }) => {
 	const { t } = useTranslation("search");
+	const { colors } = useCharacterTheme();
 	return (
 		<div className="w-full max-w-2xl mx-auto">
 			{/* ヘッダー部分 */}
@@ -67,28 +69,24 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 							<div className="markdown-content px-1">
 								<ReactMarkdown
 									components={{
-										h1: ({ node, ...props }) => (
+										h1: ({ ...props }) => (
 											<h1 className="text-2xl font-bold mt-6 mb-4" {...props} />
 										),
-										h2: ({ node, ...props }) => (
+										h2: ({ ...props }) => (
 											<h2 className="text-xl font-bold mt-5 mb-3" {...props} />
 										),
-										h3: ({ node, ...props }) => (
+										h3: ({ ...props }) => (
 											<h3 className="text-lg font-bold mt-4 mb-2" {...props} />
 										),
-										p: ({ node, ...props }) => (
-											<p className="my-3" {...props} />
-										),
-										ul: ({ node, ...props }) => (
+										p: ({ ...props }) => <p className="my-3" {...props} />,
+										ul: ({ ...props }) => (
 											<ul className="list-disc pl-6 my-3" {...props} />
 										),
-										ol: ({ node, ...props }) => (
+										ol: ({ ...props }) => (
 											<ol className="list-decimal pl-6 my-3" {...props} />
 										),
-										li: ({ node, ...props }) => (
-											<li className="my-1" {...props} />
-										),
-										img: ({ node, ...props }) => (
+										li: ({ ...props }) => <li className="my-1" {...props} />,
+										img: ({ ...props }) => (
 											<div className="my-4">
 												<img
 													className="rounded-md max-w-full h-auto"
@@ -97,16 +95,16 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 												/>
 											</div>
 										),
-										a: ({ node, ...props }) => (
+										a: ({ ...props }) => (
 											<a className="text-blue-600 hover:underline" {...props} />
 										),
-										blockquote: ({ node, ...props }) => (
+										blockquote: ({ ...props }) => (
 											<blockquote
 												className="border-l-4 border-gray-200 pl-4 italic my-4"
 												{...props}
 											/>
 										),
-										code: ({ node, className, children, ...props }) => {
+										code: ({ className, children, ...props }) => {
 											const match = /language-(\w+)/.exec(className || "");
 											const isInline =
 												!match && (className?.includes("inline") || !className);
@@ -125,10 +123,10 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 												</pre>
 											);
 										},
-										hr: ({ node, ...props }) => (
+										hr: ({ ...props }) => (
 											<hr className="my-6 border-gray-200" {...props} />
 										),
-										table: ({ node, ...props }) => (
+										table: ({ ...props }) => (
 											<div className="overflow-x-auto my-4">
 												<table
 													className="min-w-full border-collapse"
@@ -136,13 +134,13 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 												/>
 											</div>
 										),
-										th: ({ node, ...props }) => (
+										th: ({ ...props }) => (
 											<th
 												className="border border-gray-300 px-4 py-2 bg-gray-50 font-medium"
 												{...props}
 											/>
 										),
-										td: ({ node, ...props }) => (
+										td: ({ ...props }) => (
 											<td
 												className="border border-gray-300 px-4 py-2"
 												{...props}
@@ -197,7 +195,10 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 				<Button
 					onClick={onSendQuestion}
 					disabled={!inputValue.trim()}
-					style={{ backgroundColor: "#9f9579", borderColor: "#9f9579" }}
+					style={{
+						backgroundColor: colors.primary,
+						borderColor: colors.primary,
+					}}
 				>
 					<Send className="h-4 w-4" />
 				</Button>
