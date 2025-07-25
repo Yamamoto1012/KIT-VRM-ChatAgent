@@ -1,8 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { selectedModelConfigAtom } from "@/store/modelAtoms";
 import { motion } from "framer-motion";
+import { useAtomValue } from "jotai";
 import type React from "react";
 
 export const ChatThinkingIndicator: React.FC = () => {
+	const modelConfig = useAtomValue(selectedModelConfigAtom);
+	const aiAvatarSrc = modelConfig.thumbnailUrl ?? "/chatIcon.png";
 	return (
 		<div className="flex items-start gap-3">
 			<div className="flex-shrink-0">
@@ -10,7 +14,7 @@ export const ChatThinkingIndicator: React.FC = () => {
 					className="h-10 w-10 rounded-full border-2 border-white"
 					style={{ backgroundColor: "#d9ca77" }}
 				>
-					<AvatarImage src="./chatIcon.png" />
+					<AvatarImage src={aiAvatarSrc} />
 					<AvatarFallback>AI</AvatarFallback>
 				</Avatar>
 			</div>

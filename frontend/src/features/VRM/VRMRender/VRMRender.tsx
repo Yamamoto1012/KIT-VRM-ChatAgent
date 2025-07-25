@@ -18,6 +18,7 @@ type VRMRenderProps = {
 	rotation?: [number, number, number]; // 回転（オイラー角）
 	lookAtCamera?: boolean; // カメラを見るかどうか
 	isMuted: boolean; // 音声ミュートの状態
+	modelRotation?: [number, number, number]; // モデル固有の回転設定
 };
 
 /**
@@ -28,6 +29,7 @@ type VRMRenderProps = {
  * @param rotation モデルの回転角度
  * @param lookAtCamera カメラを見る機能の有効/無効
  * @param isMuted 音声ミュート状態
+ * @param modelRotation モデル固有の回転設定
  * @param ref 親コンポーネントに公開するためのref
  * @returns VRMモデルのプリミティブ
  */
@@ -40,11 +42,16 @@ export const VRMRender = forwardRef(
 			rotation = [0, 0, 0],
 			lookAtCamera = false,
 			isMuted,
+			modelRotation,
 		}: VRMRenderProps,
 		ref,
 	) => {
 		// VRMモデルとアニメーションの読み込み
-		const { vrm, scene, mixer, crossFadeAnimation } = useVRM(vrmUrl, vrmaUrl);
+		const { vrm, scene, mixer, crossFadeAnimation } = useVRM(
+			vrmUrl,
+			vrmaUrl,
+			modelRotation,
+		);
 
 		// 表情制御
 		const expressions = useVRMExpression(vrm, isMuted);

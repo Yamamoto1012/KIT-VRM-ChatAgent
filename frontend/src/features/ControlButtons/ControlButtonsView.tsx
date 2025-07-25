@@ -1,4 +1,12 @@
-import { Languages, Mic2, Volume2, VolumeX, Zap, ZapOff } from "lucide-react";
+import {
+	Languages,
+	Mic2,
+	UserCircle,
+	Volume2,
+	VolumeX,
+	Zap,
+	ZapOff,
+} from "lucide-react";
 import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "../IconButton/IconButton";
@@ -24,6 +32,11 @@ export type ControlButtonsViewProps = {
 	 * 言語選択ボタンを押した際のハンドラー
 	 */
 	onOpenLanguageSelector: () => void;
+
+	/**
+	 * モデル選択ボタンを押した際のハンドラー
+	 */
+	onOpenModelSelector: () => void;
 
 	/**
 	 * 情報パネル表示切替のハンドラー
@@ -66,6 +79,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 	isStreamingMode,
 	// onToggleInfo,
 	onOpenLanguageSelector,
+	onOpenModelSelector,
 	onToggleMute,
 	onOpenVoiceChat,
 	onCloseInfo,
@@ -119,6 +133,16 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 						icon={Languages}
 						onClick={onOpenLanguageSelector}
 						aria-label={t("selectLanguage")}
+						className="h-11 w-11 md:h-12 md:w-12"
+					/>
+				</div>
+
+				{/* モデル選択ボタン */}
+				<div className="order-0 md:order-5">
+					<IconButton
+						icon={UserCircle}
+						onClick={onOpenModelSelector}
+						aria-label={t("selectModel")}
 						className="h-11 w-11 md:h-12 md:w-12"
 					/>
 				</div>

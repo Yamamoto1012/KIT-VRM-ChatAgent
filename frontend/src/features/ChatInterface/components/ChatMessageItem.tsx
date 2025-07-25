@@ -1,5 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Message } from "@/store/chatAtoms";
+import { selectedModelConfigAtom } from "@/store/modelAtoms";
+import { useAtomValue } from "jotai";
 import type React from "react";
 import { BlinkingCursor } from "./BlinkingCursor";
 
@@ -10,6 +12,8 @@ export type ChatMessageItemProps = {
 export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 	message,
 }) => {
+	const modelConfig = useAtomValue(selectedModelConfigAtom);
+	const aiAvatarSrc = modelConfig.thumbnailUrl ?? "/chatIcon.png";
 	return (
 		<div
 			className={`flex items-center gap-3 ${
@@ -43,7 +47,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 						className="h-10 w-10 rounded-full border-2 border-white"
 						style={{ backgroundColor: "#d9ca77" }}
 					>
-						<AvatarImage src="/chatIcon.png" />
+						<AvatarImage src={aiAvatarSrc} />
 						<AvatarFallback>KIT</AvatarFallback>
 					</Avatar>
 				)}

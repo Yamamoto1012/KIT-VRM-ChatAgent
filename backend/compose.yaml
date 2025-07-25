@@ -7,7 +7,7 @@ services:
     ports:
       - "10101:10101"
     volumes:
-      - aivis-data:/home/user/.local/share/AivisSpeech-Engine-Dev
+      - ~/.local/share/AivisSpeech-Engine:/home/user/.local/share/AivisSpeech-Engine-Dev
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:10101/version"]
       interval: 30s
