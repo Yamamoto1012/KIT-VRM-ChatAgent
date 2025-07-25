@@ -1,3 +1,4 @@
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import { motion } from "framer-motion";
 import { Loader2, MessageCircle } from "lucide-react";
 import type { FC } from "react";
@@ -47,10 +48,13 @@ export const VRMLoadingView: FC<VRMLoadingViewProps> = ({
 	onRetry,
 }) => {
 	const { t } = useTranslation("vrm");
+	const { classes } = useCharacterTheme();
 	return (
 		<div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center z-50">
 			<div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-6">
-				<h2 className="text-xl font-bold text-center text-[#9f9579] mb-6">
+				<h2
+					className={`text-xl font-bold text-center ${classes.primary.text} mb-6`}
+				>
 					{loadingState === "error" ? t("loadingError") : t("loading3DModel")}
 				</h2>
 
@@ -86,7 +90,7 @@ export const VRMLoadingView: FC<VRMLoadingViewProps> = ({
 						<div className="flex flex-col items-center">
 							<div className="relative w-24 h-24 mb-4">
 								<motion.div
-									className="absolute inset-0 rounded-full bg-[#b3cfad] opacity-30"
+									className={`absolute inset-0 rounded-full ${classes.secondary.bg} opacity-30`}
 									animate={{
 										scale: [1, 1.2, 1],
 									}}
@@ -97,10 +101,12 @@ export const VRMLoadingView: FC<VRMLoadingViewProps> = ({
 									}}
 								/>
 								<div className="absolute inset-0 flex items-center justify-center">
-									<Loader2 className="w-10 h-10 text-[#9f9579] animate-spin" />
+									<Loader2
+										className={`w-10 h-10 ${classes.primary.text} animate-spin`}
+									/>
 								</div>
 							</div>
-							<p className="text-[#9f9579] text-center text-sm">
+							<p className={`${classes.primary.text} text-center text-sm`}>
 								{loadingText}
 							</p>
 						</div>
@@ -128,7 +134,9 @@ export const VRMLoadingView: FC<VRMLoadingViewProps> = ({
 									/>
 								</svg>
 							</div>
-							<p className="text-[#9f9579] text-center">{t("readyToChat")}</p>
+							<p className={`${classes.primary.text} text-center`}>
+								{t("readyToChat")}
+							</p>
 						</motion.div>
 					)}
 				</div>
@@ -137,14 +145,16 @@ export const VRMLoadingView: FC<VRMLoadingViewProps> = ({
 					{/* プログレスバー */}
 					<div className="bg-gray-100 h-2 rounded-full overflow-hidden">
 						<motion.div
-							className="h-full bg-[#d9ca77]"
+							className={`h-full ${classes.accent.bg}`}
 							initial={{ width: 0 }}
 							animate={{ width: `${progress}%` }}
 							transition={{ duration: 0.3, ease: "easeOut" }}
 						/>
 					</div>
 
-					<div className="flex justify-between text-sm text-[#9f9579]">
+					<div
+						className={`flex justify-between text-sm ${classes.primary.text}`}
+					>
 						<span>{t("loading3DModel")}</span>
 						<span>{progress}%</span>
 					</div>
@@ -155,7 +165,7 @@ export const VRMLoadingView: FC<VRMLoadingViewProps> = ({
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							transition={{ delay: 0.3, duration: 0.5 }}
-							className="w-full flex items-center justify-center px-4 py-2 bg-[#b3cfad] hover:bg-[#9f9579] text-white rounded-md transition-colors"
+							className={`w-full flex items-center justify-center px-4 py-2 ${classes.primary.bg} hover:opacity-90 text-white rounded-md transition-all`}
 							onClick={onStartChat}
 						>
 							<MessageCircle className="mr-2 h-4 w-4" />

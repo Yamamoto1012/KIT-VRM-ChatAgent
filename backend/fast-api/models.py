@@ -10,7 +10,7 @@ from typing import Dict, Any, Literal, Optional, List, Union
 class TextRequest(BaseModel):
     """テキストから音声合成するためのリクエストモデル"""
     text: str = Field(..., description="合成したいテキスト", example="こんにちは、世界")
-    speaker_id: int = Field(888753760, description="話者ID。/speakers で取得可能")
+    speaker_id: int = Field(..., description="話者ID。/speakers で取得可能")
 
 # 音声合成クエリリクエストモデル
 class AudioQueryRequest(BaseModel):
@@ -24,7 +24,7 @@ class AudioQueryRequest(BaseModel):
 class TTSRequest(BaseModel):
     """テキストから直接音声を生成するワンステップ用のリクエストモデル"""
     text: str = Field(..., description="合成したいテキスト", example="こんにちは、世界")
-    speaker_id: int = Field(888753760, description="話者ID。/speakers で取得可能")
+    speaker_id: int = Field(..., description="話者ID。/speakers で取得可能")
     format: Literal["wav", "base64"] = Field(
         "wav", 
         description="出力形式。wav: 音声ファイル、base64: Base64エンコード"

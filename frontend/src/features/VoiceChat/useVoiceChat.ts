@@ -1,4 +1,6 @@
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { getSpeechRecognitionLanguage } from "@/lib/utils";
+import { currentLanguageAtom } from "@/store/languageAtoms";
 import {
 	isListeningAtom,
 	setTranscriptAtom,
@@ -12,7 +14,7 @@ import type {
 	WebSpeechRecognitionErrorEvent,
 	WebSpeechRecognitionEvent,
 } from "@/types/speech-recognition";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useRef } from "react";
 
 /**
@@ -42,6 +44,7 @@ export const useVoiceChat = () => {
 	const setTranscript = useSetAtom(setTranscriptAtom);
 	const initiateStartListening = useSetAtom(startListeningAtom);
 	const initiateStopListening = useSetAtom(stopListeningAtom);
+	const currentLanguage = useAtomValue(currentLanguageAtom);
 
 	const recognitionRef = useRef<WebSpeechRecognition | null>(null);
 	const { stop: stopTTS } = useTextToSpeech();
@@ -66,7 +69,10 @@ export const useVoiceChat = () => {
 			const recognition = new SpeechRecognitionConstructor();
 			recognition.continuous = true;
 			recognition.interimResults = true;
-			recognition.lang = "ja-JP";
+
+			// 現在の言語設定に応じて音声認識の言語を設定
+			const recognitionLang = getSpeechRecognitionLanguage(currentLanguage);
+			recognition.lang = recognitionLang;
 
 			recognition.onresult = (event: WebSpeechRecognitionEvent) => {
 				const result = event.results[event.results.length - 1];
@@ -117,7 +123,13 @@ export const useVoiceChat = () => {
 			}
 		};
 		// isListeningだけでなくstopTTSも依存に入れる
-	}, [isListening, setTranscript, initiateStopListening, stopTTS]);
+	}, [
+		isListening,
+		setTranscript,
+		initiateStopListening,
+		stopTTS,
+		currentLanguage,
+	]);
 
 	const startListening = async () => {
 		initiateStartListening();

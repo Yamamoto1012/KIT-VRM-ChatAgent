@@ -1,5 +1,8 @@
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
+import { selectedModelConfigAtom } from "@/store/modelAtoms";
 import type { SimpleChatMessage } from "@/store/simpleChatAtoms";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAtomValue } from "jotai";
 import { MessageSquare, MoreVertical, Send } from "lucide-react";
 import type React from "react";
 import { useTranslation } from "react-i18next";
@@ -39,8 +42,11 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 	onSend,
 	messagesEndRef,
 }) => {
+	const modelConfig = useAtomValue(selectedModelConfigAtom);
+	const aiAvatarSrc = modelConfig.thumbnailUrl ?? "/chatIcon.png";
 	const hasMessages = messages.length > 0;
 	const { t } = useTranslation("chat");
+	const { colors } = useCharacterTheme();
 
 	return (
 		<div className="h-full w-full flex flex-col bg-white">
@@ -52,7 +58,12 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 			>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 bg-gradient-to-br from-[#b3cfad] to-[#9bb896] rounded-full flex items-center justify-center">
+						<div
+							className="w-8 h-8 rounded-full flex items-center justify-center"
+							style={{
+								background: `linear-gradient(to bottom right, ${colors.primary}, ${colors.accent})`,
+							}}
+						>
 							<MessageSquare className="w-4 h-4 text-white" />
 						</div>
 						<div>
@@ -92,7 +103,7 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 									<div className="flex-shrink-0">
 										<div className="w-8 h-8 bg-gradient-to-br from-[#b3cfad] to-[#9bb896] rounded-full flex items-center justify-center">
 											<img
-												src="/chatIcon.png"
+												src={aiAvatarSrc}
 												alt="AI Chat Avatar"
 												width={32}
 												height={32}
@@ -132,7 +143,7 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 									<div className="flex-shrink-0">
 										<div className="w-8 h-8 bg-gradient-to-br from-[#b3cfad] to-[#9bb896] rounded-full flex items-center justify-center">
 											<img
-												src="/chatIcon.png"
+												src={aiAvatarSrc}
 												alt="AI Thinking Avatar"
 												width={32}
 												height={32}
@@ -169,7 +180,7 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 						<div className="text-center max-w-sm">
 							<div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
 								<img
-									src="/chatIcon.png"
+									src={aiAvatarSrc}
 									alt="AI Assistant Welcome"
 									width={64}
 									height={64}

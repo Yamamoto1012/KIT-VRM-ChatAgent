@@ -8,6 +8,7 @@ import {
 	useState,
 } from "react";
 import type { AudioStreamingState } from "../../../store/chatAtoms";
+import { selectedModelConfigAtom } from "../../../store/modelAtoms";
 import { sentimentDebugAtom } from "../../../store/sentimentDebugStore";
 import type { SentimentCategory } from "../../../types/sentiment";
 import { VRMRender } from "../VRMRender/VRMRender";
@@ -60,6 +61,9 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 
 		// 思考状態の管理
 		const [isThinking, setIsThinking] = useState<boolean>(false);
+
+		// 選択されたモデル設定を取得
+		const [modelConfig] = useAtom(selectedModelConfigAtom);
 
 		// 感情分析結果の監視
 		const [sentimentDebug] = useAtom(sentimentDebugAtom);
@@ -286,16 +290,17 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 
 		// VRMモデル表示用オプション
 		const vrmOptions = {
-			vrmUrl: "/Model/KIT_2.0.vrm",
-			vrmaUrl: "/Motion/StandingIdle.vrma",
+			vrmUrl: modelConfig.vrmUrl,
+			vrmaUrl: modelConfig.defaultMotion || "/Motion/StandingIdle.vrma",
 			position: getPositionForDepth(categoryDepth),
 			rotation: getRotationForDepth(),
 			lookAtCamera: true,
 			ref: vrmRenderRef,
 			isMuted: isMuted,
+			modelRotation: modelConfig.modelRotation,
 		};
 
 		// VRMモデルの描画
-		return <VRMRender {...vrmOptions} />;
+		return <VRMRender key={modelConfig.id} {...vrmOptions} />;
 	},
 );

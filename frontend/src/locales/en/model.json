@@ -1,0 +1,10 @@
+{
+	"selector": {
+		"title": "Model Selection",
+		"description": "Select the VRM model to use",
+		"current": "Current Model"
+	},
+	"button": {
+		"switchModel": "Switch Model"
+	}
+}

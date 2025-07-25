@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { VoiceWaveform } from "@/features/VoiceWaveform/VoiceWaveform";
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import { Mic, MicOff, Send, SquareSlash } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type React from "react";
@@ -40,6 +41,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 }) => {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const { t } = useTranslation("chat");
+	const { colors } = useCharacterTheme();
 
 	// 入力内容に応じて高さを自動調整
 	const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -60,7 +62,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 	return (
 		<div
-			style={{ backgroundColor: "#b3cfad" }}
+			style={{ backgroundColor: colors.primary }}
 			className="px-3 py-2 md:px-3 md:py-2"
 		>
 			{/* 録音中の波形表示 */}
@@ -82,18 +84,21 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						px-3 py-3 md:px-3 md:py-2 
 						text-base md:text-base 
 						bg-white 
-						focus-visible:ring-2 focus-visible:ring-[#9f9579] 
+						focus-visible:ring-2 
 						focus-visible:outline-none 
 						transition-all
 						touch-manipulation
 						${isRecording ? "bg-red-50" : ""}
 					`}
-					style={{
-						minHeight: 48,
-						maxHeight: 200,
-						lineHeight: 1.5,
-						overflow: "hidden",
-					}}
+					style={
+						{
+							minHeight: 48,
+							maxHeight: 200,
+							lineHeight: 1.5,
+							overflow: "hidden",
+							"--tw-ring-color": colors.accent,
+						} as React.CSSProperties
+					}
 				/>
 
 				{/* ボタンコンテナ */}
@@ -130,7 +135,10 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 							h-12 w-12 md:h-11 md:w-11
 							touch-manipulation
 						"
-						style={{ backgroundColor: "#9f9579", borderColor: "#9f9579" }}
+						style={{
+							backgroundColor: colors.primary,
+							borderColor: colors.primary,
+						}}
 						title={t("send")}
 					>
 						<Send className="h-5 w-5 md:h-4 md:w-4" />

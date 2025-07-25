@@ -29,5 +29,6 @@
 	"thinking": "Thinking...",
 	"streamingMode": "Streaming Mode",
 	"nonStreamingMode": "Non-Streaming Mode",
-	"toggleStreamingMode": "Toggle Streaming Mode"
+	"toggleStreamingMode": "Toggle Streaming Mode",
+	"selectModel": "Select Model"
 }

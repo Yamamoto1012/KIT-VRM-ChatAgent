@@ -30,11 +30,13 @@ type UseVRMReturn = {
  * VRMモデルとアニメーションを管理するカスタムフック
  * @param vrmUrl ロードするVRMモデルのURL
  * @param initialVrmaUrl 初期アニメーションのURL
+ * @param modelRotation モデル固有の回転設定
  * @returns VRMモデル、シーン、アニメーションミキサー、クロスフェード関数を含むオブジェクト
  */
 export const useVRM = (
 	vrmUrl: string,
 	initialVrmaUrl?: string,
+	modelRotation?: [number, number, number],
 ): UseVRMReturn => {
 	// モデルとシーンの状態
 	const [vrm, setVRM] = useState<VRM | null>(null);
@@ -128,6 +130,22 @@ export const useVRM = (
 						"VRMモデルのフォーマットが正しくないか、データが破損しています",
 					);
 					return;
+				}
+
+				// モデル固有の回転設定を適用
+				if (modelRotation) {
+					loadedVRM.scene.rotation.set(...modelRotation);
+				} else {
+					// VRM1.0モデルの場合は180度回転させて正面を向かせる
+					const vrmMeta = loadedVRM.meta;
+					const isVRM1 =
+						vrmMeta?.metaVersion === "1" ||
+						// metaVersionが未定義の場合、VRM1固有のプロパティで判定
+						(vrmMeta && "name" in vrmMeta && "authors" in vrmMeta);
+
+					if (isVRM1) {
+						loadedVRM.scene.rotation.y = Math.PI; // 180度回転
+					}
 				}
 
 				// 状態を更新

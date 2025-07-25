@@ -7,6 +7,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import type { ChatMessage, ProcessingState } from "@/store/voiceChatAtoms";
 import { motion } from "framer-motion";
 import { Info, Mic, StopCircle } from "lucide-react";
@@ -34,6 +35,7 @@ export const VoiceChatView = ({
 }: VoiceChatViewProps) => {
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const { t } = useTranslation("voice");
+	const { classes } = useCharacterTheme();
 
 	// チャット履歴が更新されたらスクロールを一番下に
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -75,7 +77,9 @@ export const VoiceChatView = ({
 				{/* AIの返答は画面上部(3Dモデルの上)に表示 */}
 				{latestAIMessage && (
 					<div className="w-full max-w-md mx-auto pt-4 pb-2">
-						<div className="bg-[#b3cfad] text-gray-100 px-4 py-2 rounded-lg">
+						<div
+							className={`${classes.primary.bg} text-white px-4 py-2 rounded-lg`}
+						>
 							{latestAIMessage.content}
 						</div>
 					</div>
@@ -87,7 +91,9 @@ export const VoiceChatView = ({
 				{/* ユーザーの入力は画面下部(マイクボタンの上)に表示 */}
 				{latestUserMessage && (
 					<div className="w-full max-w-md mx-auto pb-4">
-						<div className="bg-gray-700 text-white px-4 py-2 rounded-lg">
+						<div
+							className={`${classes.secondary.bg} ${classes.neutral.text} px-4 py-2 rounded-lg`}
+						>
 							{latestUserMessage.content}
 						</div>
 					</div>
@@ -96,7 +102,9 @@ export const VoiceChatView = ({
 				{/* 現在入力中のテキスト */}
 				{isListening && transcript && (
 					<div className="w-full max-w-md mx-auto pb-2">
-						<div className="bg-gray-700/70 text-white px-4 py-2 rounded-lg opacity-70">
+						<div
+							className={`${classes.surface.bg} ${classes.neutral.text} px-4 py-2 rounded-lg opacity-70`}
+						>
 							{transcript}
 						</div>
 					</div>
@@ -161,7 +169,7 @@ export const VoiceChatView = ({
 							processingState === "thinking" ||
 							processingState === "responding"
 						}
-						className="bg-[#b3cfad] hover:bg-[#c3e6d8] text-white rounded-full h-14 w-14 flex items-center justify-center"
+						className={`${classes.primary.bg} hover:opacity-90 text-white rounded-full h-14 w-14 flex items-center justify-center`}
 					>
 						<Mic className="h-6 w-6" />
 					</Button>
@@ -169,7 +177,7 @@ export const VoiceChatView = ({
 					<Button
 						onClick={onStopListening}
 						disabled={!isListening}
-						className="bg-gray-800 hover:bg-gray-700 text-white rounded-full h-14 w-14 flex items-center justify-center font-bold"
+						className={`${classes.neutral.bg} hover:bg-gray-700 text-white rounded-full h-14 w-14 flex items-center justify-center font-bold`}
 					>
 						<StopCircle className="h-6 w-6" />
 					</Button>
