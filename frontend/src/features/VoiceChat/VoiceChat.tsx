@@ -1,5 +1,9 @@
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-import { buildPrompt, generateText } from "@/services/llmService";
+import {
+	type StreamChunk,
+	buildPrompt,
+	generateTextStream,
+} from "@/services/llmService";
 import {
 	addAiMessageAtom,
 	addUserMessageAtom,
@@ -25,7 +29,7 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 	// カスタムフックから音声認識機能を取得
 	const { isListening, transcript, startListening, stopListening } =
 		useVoiceChat();
-	const { speak } = useTextToSpeech({ vrmWrapperRef });
+	const { speakProgressive } = useTextToSpeech({ vrmWrapperRef });
 
 	const [aiResponse] = useAtom(aiResponseAtom);
 	const [processingState] = useAtom(processingStateAtom);
@@ -42,6 +46,9 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 	const responseTimerRef = useRef<NodeJS.Timeout | null>(null);
 	const [lastSpokenTime, setLastSpokenTime] = useState<number | null>(null);
 	const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// ストリーミング応答の蓄積用
+	const [accumulatedResponse, setAccumulatedResponse] = useState<string>("");
 
 	// transcriptが更新されるたびに最終発話時刻を記録
 	useEffect(() => {
@@ -60,8 +67,8 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 		}
 		setLastSpokenTime(Date.now());
 		silenceTimeoutRef.current = setInterval(() => {
-			if (lastSpokenTime && Date.now() - lastSpokenTime > 3000) {
-				// 3秒無音なら自動停止
+			if (lastSpokenTime && Date.now() - lastSpokenTime > 1500) {
+				// 1.5秒無音なら自動停止
 				stopListening();
 			}
 		}, 300);
@@ -95,31 +102,25 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 	// 音声処理が完了した時の処理
 	useEffect(() => {
 		if (!isListening && transcript) {
-			// 音声認識が停止し、かつトランスクリプトがある場合は処理中状態に
+			// 音声認識が停止し、かつトランスクリプトがある場合は即座に処理開始
 			setProcessingState("processing");
 
 			// ユーザーメッセージを保存
 			addUserMessage(transcript);
 
-			// 1秒後に思考中状態に変更
-			const processingTimer = setTimeout(() => {
-				setProcessingState("thinking");
+			// 即座に思考中状態に変更
+			setProcessingState("thinking");
 
-				// 思考状態に遷移するが、モーションはStandingIdleのままにする
-				if (vrmWrapperRef.current) {
-					setVrmThinkingState(true);
+			// 思考状態に遷移するが、モーションはStandingIdleのままにする
+			if (vrmWrapperRef.current) {
+				setVrmThinkingState(true);
 
-					// StandingIdleモーションを維持
-					vrmWrapperRef.current.crossFadeAnimation("/Motion/StandingIdle.vrma");
-				}
+				// StandingIdleモーションを維持
+				vrmWrapperRef.current.crossFadeAnimation("/Motion/StandingIdle.vrma");
+			}
 
-				// AIの返答を生成（実際はAPIを呼び出す）
-				generateAIResponse(transcript);
-			}, 1000);
-
-			return () => {
-				clearTimeout(processingTimer);
-			};
+			// AIの返答を即座に生成
+			generateAIResponse(transcript);
 		}
 		if (isListening) {
 			// 録音中の状態
@@ -139,7 +140,7 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 		addUserMessage,
 	]);
 
-	// AIの応答を生成する関数(APIとの通信部分)
+	// AIの応答を生成する関数(ストリーミング対応)
 	const generateAIResponse = useCallback(
 		async (userInput: string) => {
 			try {
@@ -147,21 +148,39 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 				const payloadQuery = buildPrompt(userInput);
 				console.log(payloadQuery);
 
-				const fullResponse = await generateText(
+				// 応答の蓄積をリセット
+				setAccumulatedResponse("");
+
+				const onChunk = (chunk: StreamChunk) => {
+					if (chunk.type === "content" && chunk.content) {
+						// ストリーミングチャンクを蓄積
+						setAccumulatedResponse((prev) => {
+							const newResponse = prev + chunk.content;
+							// 文章の区切りで逐次TTS処理（実装予定）
+							return newResponse;
+						});
+					} else if (chunk.type === "done") {
+						// ストリーミング完了時の処理
+						setProcessingState("responding");
+					} else if (chunk.type === "error") {
+						throw new Error(chunk.content || "Unknown streaming error");
+					}
+				};
+
+				await generateTextStream(
 					payloadQuery,
 					undefined, // conversationId
 					undefined, // signal
+					onChunk,
 					"/api/llm/query", // エンドポイント
 					"ja", // 日本語
 				);
 
-				addAiMessage(fullResponse);
+				// 最終的な応答をメッセージに追加
+				addAiMessage(accumulatedResponse);
 
-				// 応答状態に変更
-				setProcessingState("responding");
-
-				// TTSで音声再生
-				await speak(fullResponse);
+				// プログレッシブTTSで音声再生
+				await speakProgressive(accumulatedResponse);
 
 				setProcessingState("initial");
 			} catch (error) {
@@ -175,7 +194,13 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 				setVrmThinkingState(false);
 			}
 		},
-		[addAiMessage, setProcessingState, setVrmThinkingState, speak],
+		[
+			addAiMessage,
+			setProcessingState,
+			setVrmThinkingState,
+			speakProgressive,
+			accumulatedResponse,
+		],
 	);
 
 	// 音声認識の開始ハンドラー

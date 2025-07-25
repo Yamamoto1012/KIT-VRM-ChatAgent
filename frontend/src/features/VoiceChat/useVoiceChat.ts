@@ -92,6 +92,10 @@ export const useVoiceChat = () => {
 				recognitionRef.current = null;
 			};
 
+			recognition.onspeechend = () => {
+				recognition.stop();
+			};
+
 			recognition.onstart = () => {};
 
 			recognitionRef.current = recognition;
