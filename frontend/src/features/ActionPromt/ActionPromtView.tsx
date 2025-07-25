@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceWaveform } from "@/features/VoiceWaveform/VoiceWaveform";
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import { showBottomNavigationAtom } from "@/store/navigationAtoms";
 import { motion } from "framer-motion";
 import { useAtom } from "jotai";
@@ -45,6 +46,7 @@ export const ActionPromptView: React.FC<ActionPromptViewProps> = ({
 }) => {
 	const [showBottomNavigation] = useAtom(showBottomNavigationAtom);
 	const { t } = useTranslation("action");
+	const { classes } = useCharacterTheme();
 
 	return (
 		<motion.div
@@ -66,7 +68,7 @@ export const ActionPromptView: React.FC<ActionPromptViewProps> = ({
 			>
 				<div
 					className={`
-					bg-[#b3cfad] text-[#333333] 
+					${classes.primary.bg} ${classes.neutral.text} 
 					${showBottomNavigation ? "p-3" : "p-3"}
 				`}
 				>
@@ -92,7 +94,7 @@ export const ActionPromptView: React.FC<ActionPromptViewProps> = ({
 								variant="outline"
 								className={`
 									w-full flex items-center justify-center gap-2 
-									hover:bg-[#d9ca77]/20 hover:text-[#9f9579] hover:border-[#9f9579]
+									hover:${classes.accent.bg}/20 hover:${classes.accent.text} hover:${classes.accent.border}
 									${showBottomNavigation ? "text-sm py-2.5" : ""}
 								`}
 								onClick={onSearch}
@@ -107,7 +109,7 @@ export const ActionPromptView: React.FC<ActionPromptViewProps> = ({
 								variant="outline"
 								className={`
 									w-full flex items-center justify-center gap-2 
-									hover:bg-[#d9ca77]/20 hover:text-[#9f9579] hover:border-[#9f9579]
+									hover:${classes.accent.bg}/20 hover:${classes.accent.text} hover:${classes.accent.border}
 									${showBottomNavigation ? "text-sm py-2.5" : ""}
 								`}
 								onClick={onQuestionClick}
@@ -164,7 +166,7 @@ export const ActionPromptView: React.FC<ActionPromptViewProps> = ({
 									onClick={onSendQuestion}
 									disabled={!question.trim() || isRecording}
 									size={showBottomNavigation ? "sm" : "default"}
-									className="bg-[#9f9579] hover:bg-[#9f9579]/90 text-white flex-shrink-0"
+									className={`${classes.primary.bg} hover:opacity-90 text-white flex-shrink-0`}
 								>
 									<Send className="h-4 w-4" />
 								</Button>

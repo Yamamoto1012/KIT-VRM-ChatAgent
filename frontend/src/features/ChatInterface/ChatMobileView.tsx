@@ -1,3 +1,4 @@
+import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import type { Message } from "@/store/chatAtoms";
 import { motion } from "framer-motion";
 import { Mic, MicOff, Send, Zap, ZapOff } from "lucide-react";
@@ -44,6 +45,7 @@ export const ChatMobileView: React.FC<ChatMobileViewProps> = ({
 }) => {
 	// メッセージがある場合のみメッセージエリアを表示
 	const hasMessages = messages.length > 0;
+	const { colors } = useCharacterTheme();
 
 	return (
 		<div className="w-full h-full flex flex-col bg-transparent relative">
@@ -72,9 +74,14 @@ export const ChatMobileView: React.FC<ChatMobileViewProps> = ({
 										${
 											message.isUser
 												? "bg-white/90 text-gray-800 rounded-br-lg border border-white/30"
-												: "bg-gradient-to-br from-[#b3cfad] to-[#9bb896] text-white rounded-bl-lg shadow-xl"
+												: "bg-gradient-to-br text-white rounded-bl-lg shadow-xl"
 										}
 									`}
+										style={{
+											background: !message.isUser
+												? `linear-gradient(to bottom right, ${colors.primary}, ${colors.accent})`
+												: undefined,
+										}}
 									>
 										<p className="text-sm leading-relaxed">{message.text}</p>
 									</div>
@@ -185,11 +192,14 @@ export const ChatMobileView: React.FC<ChatMobileViewProps> = ({
 								onClick={onSend}
 								disabled={isThinking || !inputValue.trim() || isRecording}
 								className="
-									bg-gradient-to-br from-[#b3cfad] to-[#9bb896] text-white p-3 rounded-2xl flex-shrink-0 touch-manipulation
+									text-white p-3 rounded-2xl flex-shrink-0 touch-manipulation
 									disabled:opacity-50 disabled:from-gray-300 disabled:to-gray-400
-									hover:from-[#9bb896] hover:to-[#8aa785] transition-all duration-300
+									hover:opacity-90 transition-all duration-300
 									shadow-lg hover:shadow-xl
 								"
+								style={{
+									background: `linear-gradient(to bottom right, ${colors.primary}, ${colors.accent})`,
+								}}
 							>
 								<Send className="h-5 w-5" />
 							</motion.button>
