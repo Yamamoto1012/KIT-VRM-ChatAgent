@@ -177,7 +177,6 @@ class ONNXSentimentAnalyzer:
             score, category = self._probs_to_score_and_category(probs)
             
             # 各クラスの確率も返す
-            # 一般的な3クラス分類を想定: [negative, neutral, positive]
             if len(probs) >= 3:
                 class_probs = {
                     'negative': float(probs[0]),
@@ -185,11 +184,11 @@ class ONNXSentimentAnalyzer:
                     'positive': float(probs[2])
                 }
             else:
-                # バイナリ分類の場合
+                # バイナリ分類の場合: [positive, negative]
                 class_probs = {
-                    'negative': float(probs[0]),
+                    'positive': float(probs[0]),
                     'neutral': 0.0,
-                    'positive': float(probs[1]) if len(probs) > 1 else 0.0
+                    'negative': float(probs[1]) if len(probs) > 1 else 0.0
                 }
             
             return score, category, class_probs
@@ -218,9 +217,9 @@ class ONNXSentimentAnalyzer:
             score = (positive_prob - negative_prob + 1) / 2 * 100
             
         else:
-            # バイナリ分類: [negative, positive]
-            negative_prob = probs[0]
-            positive_prob = probs[1] if len(probs) > 1 else (1 - negative_prob)
+            # バイナリ分類: [positive, negative]
+            positive_prob = probs[0]
+            negative_prob = probs[1] if len(probs) > 1 else (1 - positive_prob)
             neutral_prob = 0.0
             
             score = positive_prob * 100
