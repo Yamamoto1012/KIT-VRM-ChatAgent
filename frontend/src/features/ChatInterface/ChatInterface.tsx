@@ -33,6 +33,7 @@ import { useStreamingTTS } from "../../hooks/useStreamingTTS";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 
 import {
+	type ConversationMessage,
 	buildPrompt,
 	generateTextNonStreaming,
 	generateTextStream,
@@ -223,6 +224,15 @@ export const ChatInterface = forwardRef<
 
 		streamingTTS.clearQueue();
 
+		// 会話履歴を準備（最新20件まで）
+		const conversationHistory: ConversationMessage[] = messages
+			.slice(-20)
+			.map((msg) => ({
+				role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
+				content: msg.text,
+			}))
+			.filter((msg) => msg.content.trim()); // 空のメッセージを除外
+
 		try {
 			const payloadQuery = buildPrompt(trimmed);
 
@@ -232,7 +242,7 @@ export const ChatInterface = forwardRef<
 
 				await generateTextStream(
 					payloadQuery,
-					undefined,
+					conversationHistory,
 					controller.signal,
 					(chunk) => {
 						if (chunk.type === "content" && chunk.content) {
@@ -292,7 +302,7 @@ export const ChatInterface = forwardRef<
 				// 非ストリーミングモード
 				const response = await generateTextNonStreaming(
 					payloadQuery,
-					undefined,
+					conversationHistory,
 					controller.signal,
 					currentLanguage,
 				);
