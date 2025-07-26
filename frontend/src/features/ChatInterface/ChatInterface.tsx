@@ -72,6 +72,10 @@ export const ChatInterface = forwardRef<
 	const lastMessageId = useRef<number | null>(null);
 	const currentDisplayText = useRef("");
 
+	// バッファリング機能用のref
+	const chunkBufferRef = useRef<string>("");
+	const bufferTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 	const { state: streamingTTSState, ...streamingTTS } = useStreamingTTS({
 		vrmWrapperRef: props.vrmWrapperRef,
 	});
@@ -84,6 +88,30 @@ export const ChatInterface = forwardRef<
 		enabled: true,
 		enableDebugLogging: true,
 	});
+
+	/**
+	 * バッファリング機能付きaddChunk関数
+	 * 連続したチャンクをバッファし、50ms後にバッチ送信する
+	 */
+	const bufferedAddChunk = useCallback(
+		(chunk: string) => {
+			chunkBufferRef.current += chunk;
+
+			// 既存のタイマーをクリア
+			if (bufferTimerRef.current) {
+				clearTimeout(bufferTimerRef.current);
+			}
+
+			// 50ms後にバッファの内容を送信
+			bufferTimerRef.current = setTimeout(() => {
+				if (chunkBufferRef.current) {
+					streamingTTS.addChunk(chunkBufferRef.current);
+					chunkBufferRef.current = "";
+				}
+			}, 50);
+		},
+		[streamingTTS.addChunk],
+	);
 
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const abortRef = useRef<AbortController | null>(null);
@@ -144,12 +172,27 @@ export const ChatInterface = forwardRef<
 			isAnimating.current = false;
 			streamBuffer.current = "";
 			currentDisplayText.current = "";
+			// バッファをクリア
+			if (bufferTimerRef.current) {
+				clearTimeout(bufferTimerRef.current);
+				bufferTimerRef.current = null;
+			}
+			chunkBufferRef.current = "";
 		},
 	}));
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	});
+
+	// コンポーネントのクリーンアップ時にバッファタイマーをクリア
+	useEffect(() => {
+		return () => {
+			if (bufferTimerRef.current) {
+				clearTimeout(bufferTimerRef.current);
+			}
+		};
+	}, []);
 
 	const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
 		setInput(e.target.value);
@@ -205,7 +248,7 @@ export const ChatInterface = forwardRef<
 									isAnimating.current = true;
 									animateText(); // デフォルト速度（30ms）を使用
 								}
-								streamingTTS.addChunk(diff);
+								bufferedAddChunk(diff);
 							}
 						} else if (chunk.type === "done") {
 							streamingTTS.finalize();
@@ -291,6 +334,12 @@ export const ChatInterface = forwardRef<
 			currentDisplayText.current = "";
 			setIsLoading(false);
 			isGeneratingRef.current = false;
+			// バッファをクリア
+			if (bufferTimerRef.current) {
+				clearTimeout(bufferTimerRef.current);
+				bufferTimerRef.current = null;
+			}
+			chunkBufferRef.current = "";
 
 			if (err instanceof Error && err.name === "AbortError") {
 				updateMessage({
@@ -370,6 +419,12 @@ export const ChatInterface = forwardRef<
 			isAnimating.current = false;
 			streamBuffer.current = "";
 			currentDisplayText.current = "";
+			// バッファをクリア
+			if (bufferTimerRef.current) {
+				clearTimeout(bufferTimerRef.current);
+				bufferTimerRef.current = null;
+			}
+			chunkBufferRef.current = "";
 		},
 		messagesEndRef,
 	};
