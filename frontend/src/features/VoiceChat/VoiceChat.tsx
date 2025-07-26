@@ -1,5 +1,6 @@
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import {
+	type ConversationMessage,
 	type StreamChunk,
 	buildPrompt,
 	generateTextStream,
@@ -144,6 +145,17 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 	const generateAIResponse = useCallback(
 		async (userInput: string) => {
 			try {
+				// 会話履歴の準備（音声チャットでは10件）
+				const conversationHistory: ConversationMessage[] = chatHistory
+					.slice(-10)
+					.map((msg) => ({
+						role: (msg.role === "user" ? "user" : "assistant") as
+							| "user"
+							| "assistant",
+						content: msg.content,
+					}))
+					.filter((msg) => msg.content.trim()); // 空のメッセージを除外
+
 				// プロンプトの構築
 				const payloadQuery = buildPrompt(userInput);
 				console.log(payloadQuery);
@@ -169,7 +181,7 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 
 				await generateTextStream(
 					payloadQuery,
-					undefined, // conversationId
+					conversationHistory, // 履歴を追加
 					undefined, // signal
 					onChunk,
 					"/api/llm/query", // エンドポイント
@@ -196,6 +208,7 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 		},
 		[
 			addAiMessage,
+			chatHistory,
 			setProcessingState,
 			setVrmThinkingState,
 			speakProgressive,

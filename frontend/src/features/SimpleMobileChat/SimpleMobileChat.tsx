@@ -1,4 +1,8 @@
-import { buildPrompt, generateText } from "@/services/llmService";
+import {
+	type ConversationMessage,
+	buildPrompt,
+	generateText,
+} from "@/services/llmService";
 import { currentLanguageAtom } from "@/store/languageAtoms";
 import {
 	addSimpleChatMessageAtom,
@@ -54,11 +58,20 @@ export const SimpleMobileChat: React.FC = () => {
 			// AbortControllerで中断可能にする
 			abortRef.current = new AbortController();
 
+			// 会話履歴の準備（モバイルは履歴を少なめに10件）
+			const conversationHistory: ConversationMessage[] = messages
+				.slice(-10)
+				.map((msg) => ({
+					role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
+					content: msg.text,
+				}))
+				.filter((msg) => msg.content.trim()); // 空のメッセージを除外
+
 			try {
 				const payloadQuery = buildPrompt(userMessage);
 				const response = await generateText(
 					payloadQuery,
-					undefined, // conversationId
+					conversationHistory, // 履歴を追加
 					abortRef.current.signal, // signal
 					"/api/llm/query", // endpoint
 					currentLanguage, // language
@@ -85,7 +98,7 @@ export const SimpleMobileChat: React.FC = () => {
 				abortRef.current = null;
 			}
 		},
-		[addMessage, setIsThinking, currentLanguage, t],
+		[addMessage, setIsThinking, currentLanguage, messages, t],
 	);
 
 	// メッセージ送信処理
