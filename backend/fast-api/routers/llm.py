@@ -12,6 +12,7 @@ import asyncio
 from datetime import datetime
 
 from config import settings, logger
+from models import ConversationMessage, QueryRequestWithHistory
 
 router = APIRouter(
     tags=["llm"],
@@ -19,7 +20,7 @@ router = APIRouter(
 )
 
 class QueryRequest(BaseModel):
-    """ユーザークエリのリクエストモデル"""
+    """ユーザークエリのリクエストモデル（後方互換性用）"""
     query: str # 質問の文字列
     context: Optional[Dict[str, Any]] = None # 追加のコンテキスト情報(オプション)
     language: Optional[str] = None # 応答言語
@@ -37,6 +38,40 @@ class StreamChunk(BaseModel):
     content: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     timestamp: str
+
+
+def format_conversation_history(
+    history: list[ConversationMessage], 
+    max_length: int = 1200
+) -> str:
+    """
+    会話履歴を文字列にフォーマット
+    """
+    if not history:
+        return ""
+    
+    formatted_messages = []
+    total_length = 0
+    
+    # 新しい順に処理（最新の会話を優先）
+    for msg in reversed(history):
+        role_label = "ユーザー" if msg.role == "user" else "アシスタント"
+        formatted = f"{role_label}: {msg.content}"
+        
+        if total_length + len(formatted) > max_length:
+            break
+            
+        formatted_messages.insert(0, formatted)
+        total_length += len(formatted)
+    
+    return "\n".join(formatted_messages)
+
+
+def get_conversation_context(context: str) -> dict:
+    """
+    会話コンテキストを単一フィールドで返す（Difyの段落対応により分割不要）
+    """
+    return {"conversation_context": context}
 
 async def stream_dify_response(
     workflow_id: str,
@@ -207,15 +242,24 @@ async def call_dify_workflow_blocking(
         return result.get("data", {}).get("outputs", {}).get("response", "応答を生成できませんでした。")
 
 @router.post("/query")
-async def process_query(request: QueryRequest):
+async def process_query(request: QueryRequestWithHistory):
     """
-    ユーザークエリを処理する（ストリーミング/非ストリーミング両対応）
+    ユーザークエリを処理する（会話履歴対応版）
     """
     try:
+        # 会話履歴をフォーマット
+        history_context = format_conversation_history(
+            request.conversation_history or []
+        )
+        
+        # 会話コンテキストを単一フィールドで設定
+        context_data = get_conversation_context(history_context)
+        
         inputs = {
             "user_input": request.query,
             "language": request.language or "ja",
-            "stream": request.stream and settings.enable_streaming
+            "stream": request.stream and settings.enable_streaming,
+            **context_data
         }
         
         if request.stream and settings.enable_streaming:
@@ -246,14 +290,23 @@ async def process_query(request: QueryRequest):
         raise HTTPException(status_code=500, detail="Error processing response")
 
 @router.post("/voice_mode_answer")
-async def process_voice_mode_answer(request: QueryRequest):
+async def process_voice_mode_answer(request: QueryRequestWithHistory):
     """
-    音声モード用の処理
+    音声モード用の処理（会話履歴対応版）
     """
     try:
+        # 会話履歴をフォーマット
+        history_context = format_conversation_history(
+            request.conversation_history or []
+        )
+        
+        # 会話コンテキストを単一フィールドで設定
+        context_data = get_conversation_context(history_context)
+        
         inputs = {
             "user_input": request.query,
-            "language": request.language or "ja"
+            "language": request.language or "ja",
+            **context_data
         }
         
         # ストリーミングが有効な場合はストリーミングレスポンスを返す
@@ -290,15 +343,24 @@ async def process_voice_mode_answer(request: QueryRequest):
         raise HTTPException(status_code=500, detail="Error processing response")
 
 @router.post("/query_non_streaming")
-async def process_query_non_streaming(request: QueryRequest):
+async def process_query_non_streaming(request: QueryRequestWithHistory):
     """
-    ユーザークエリを処理する（非ストリーミング専用）
+    ユーザークエリを処理する（非ストリーミング専用、会話履歴対応版）
     """
     try:
+        # 会話履歴をフォーマット
+        history_context = format_conversation_history(
+            request.conversation_history or []
+        )
+        
+        # 会話コンテキストを単一フィールドで設定
+        context_data = get_conversation_context(history_context)
+        
         inputs = {
             "user_input": request.query,
             "language": request.language or "ja",
-            "stream": False
+            "stream": False,
+            **context_data
         }
         
         # 強制的に非ストリーミングで処理
