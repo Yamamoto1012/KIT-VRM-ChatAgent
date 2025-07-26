@@ -73,6 +73,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 		cameraConfig: {
 			...DEFAULT_CAMERA_CONFIG,
 			desktopPosition: [0.04, 1.35, 1.2],
+			mobilePosition: [0.04, 1.25, 1.4],
 		},
 	},
 	{
@@ -87,6 +88,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 		cameraConfig: {
 			...DEFAULT_CAMERA_CONFIG,
 			desktopPosition: [0, 0.5, 1.1],
+			mobilePosition: [0, 0.4, 1.3],
 		},
 	},
 ];
