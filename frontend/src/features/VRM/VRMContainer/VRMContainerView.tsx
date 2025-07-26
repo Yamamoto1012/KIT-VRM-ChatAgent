@@ -152,10 +152,10 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 				<Canvas
 					flat
 					camera={{
-						fov: 40,
+						fov: cameraSettings.fov,
 						near: 0.01,
 						far: 2000,
-						position: [0, 1.45, 1],
+						position: cameraSettings.position,
 					}}
 				>
 					<CameraController cameraSettings={cameraSettings} />
