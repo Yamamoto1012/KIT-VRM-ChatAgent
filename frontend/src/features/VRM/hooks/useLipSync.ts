@@ -135,9 +135,11 @@ export const useLipSync = (
 		if (!streamingAudioQueue || !expressionManager) return;
 
 		// キューに新しい音声アイテムが追加された場合の処理
-		const playingItem = streamingAudioQueue?.find((item) => item.isPlaying);
+		const playingItem = streamingAudioQueue?.find(
+			(item) => item.status === "playing",
+		);
 		const generatingItem = streamingAudioQueue?.find(
-			(item) => item.isGenerating,
+			(item) => item.status === "generating",
 		);
 
 		if (playingItem?.audioURL) {

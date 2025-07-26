@@ -1,5 +1,11 @@
 import type { SupportedLanguage } from "../store/languageAtoms";
 
+// 会話メッセージの型定義
+export type ConversationMessage = {
+	role: "user" | "assistant";
+	content: string;
+};
+
 // ストリーミングレスポンスの型定義
 export type StreamChunk = {
 	id: string;
@@ -30,15 +36,15 @@ export const buildPrompt = (query: string): string => {
  */
 export async function generateTextStream(
 	query: string,
-	conversationId: string | undefined,
-	signal: AbortSignal | undefined,
-	onChunk: (chunk: StreamChunk) => void,
+	conversationHistory?: ConversationMessage[],
+	signal?: AbortSignal,
+	onChunk?: (chunk: StreamChunk) => void,
 	endpoint = "/api/llm/query",
 	language: SupportedLanguage = "ja",
 ): Promise<void> {
 	const requestBody = {
 		query,
-		conversation_id: conversationId,
+		conversation_history: conversationHistory || [],
 		stream: true,
 		language,
 	};
@@ -74,7 +80,7 @@ export async function generateTextStream(
 				if (buffer.trim()) {
 					try {
 						const chunk = JSON.parse(buffer) as StreamChunk;
-						onChunk(chunk);
+						onChunk?.(chunk);
 					} catch (e) {
 						console.error("Error parsing final JSON chunk:", e);
 					}
@@ -92,7 +98,7 @@ export async function generateTextStream(
 				if (jsonString) {
 					try {
 						const chunk = JSON.parse(jsonString) as StreamChunk;
-						onChunk(chunk);
+						onChunk?.(chunk);
 					} catch (e) {
 						console.error(
 							"Error parsing JSON chunk:",
@@ -124,13 +130,13 @@ export async function generateTextStream(
  */
 export async function generateTextNonStreaming(
 	query: string,
-	conversationId?: string,
+	conversationHistory?: ConversationMessage[],
 	signal?: AbortSignal,
 	language: SupportedLanguage = "ja",
 ): Promise<string> {
 	const requestBody = {
 		query,
-		conversation_id: conversationId,
+		conversation_history: conversationHistory || [],
 		stream: false,
 		language,
 	};
@@ -175,7 +181,7 @@ export async function generateTextNonStreaming(
  */
 export async function generateText(
 	query: string,
-	conversationId?: string,
+	conversationHistory?: ConversationMessage[],
 	signal?: AbortSignal,
 	endpoint = "/api/llm/query",
 	language: SupportedLanguage = "ja",
@@ -194,7 +200,7 @@ export async function generateText(
 
 		generateTextStream(
 			query,
-			conversationId,
+			conversationHistory,
 			signal,
 			onChunk,
 			endpoint,

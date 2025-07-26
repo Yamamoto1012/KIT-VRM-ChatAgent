@@ -14,14 +14,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
+ * 音声キューアイテムの状態
+ */
+export enum AudioQueueItemStatus {
+	PENDING = "pending",
+	GENERATING = "generating",
+	READY = "ready",
+	PLAYING = "playing",
+	COMPLETED = "completed",
+	ERROR = "error",
+}
+
+/**
  * 音声キューのアイテム
  */
 export type AudioQueueItem = {
 	id: string;
 	text: string;
 	audioURL?: string;
-	isGenerating: boolean;
-	isPlaying: boolean;
+	status: AudioQueueItemStatus;
 	error?: Error;
 };
 
@@ -34,6 +45,7 @@ export type UseStreamingTTSOptions = {
 	vrmWrapperRef?: React.RefObject<VRMWrapperHandle | null>;
 	maxQueueSize?: number;
 	splitPattern?: RegExp;
+	enableDebug?: boolean;
 };
 
 /**
@@ -137,8 +149,7 @@ export const useStreamingTTS = (
 				const newItems: AudioQueueItem[] = sentencesToQueue.map((sentence) => ({
 					id: `${Date.now()}-${Math.random()}`,
 					text: sentence,
-					isGenerating: false,
-					isPlaying: false,
+					status: AudioQueueItemStatus.PENDING,
 				}));
 
 				setState((prev) => ({
@@ -168,37 +179,60 @@ export const useStreamingTTS = (
 	/**
 	 * 音声生成を実行する
 	 */
-	const generateAudio = useCallback(
-		async (item: AudioQueueItem): Promise<AudioQueueItem> => {
-			try {
-				const ttsRequest: TTSRequest = {
-					text: item.text,
-					speakerId: modelConfig.speakerId,
-					format: defaultFormat,
-				};
+	const generateAudioWithRetry = useCallback(
+		async (item: AudioQueueItem, maxRetries = 3): Promise<AudioQueueItem> => {
+			let lastError: Error | null = null;
 
-				const audioBuffer = await requestTTS(ttsRequest, t);
-				const audioURL = createAudioURL(audioBuffer);
-
-				return { ...item, audioURL, isGenerating: false };
-			} catch (error) {
-				if (error instanceof Error && error.name === "AbortError") {
-					console.log("Audio generation was cancelled.");
-					return {
-						...item,
-						isGenerating: false,
-						error: new Error("音声生成がキャンセルされました"),
+			for (let i = 0; i < maxRetries; i++) {
+				try {
+					const ttsRequest: TTSRequest = {
+						text: item.text,
+						speakerId: modelConfig.speakerId,
+						format: defaultFormat,
 					};
+
+					const audioBuffer = await requestTTS(ttsRequest, t);
+					const audioURL = createAudioURL(audioBuffer);
+
+					return { ...item, audioURL, status: AudioQueueItemStatus.READY };
+				} catch (error) {
+					if (error instanceof Error && error.name === "AbortError") {
+						console.log("Audio generation was cancelled.");
+						return {
+							...item,
+							status: AudioQueueItemStatus.ERROR,
+							error: new Error("音声生成がキャンセルされました"),
+						};
+					}
+
+					lastError =
+						error instanceof Error ? error : new Error("Unknown error");
+					console.warn(`Audio generation attempt ${i + 1} failed:`, error);
+
+					// 最後の試行でなければエクスポネンシャルバックオフ
+					if (i < maxRetries - 1) {
+						await new Promise((resolve) => setTimeout(resolve, 2 ** i * 1000));
+					}
 				}
-				console.error("Error generating audio:", error);
-				return {
-					...item,
-					isGenerating: false,
-					error: error instanceof Error ? error : new Error("音声生成エラー"),
-				};
 			}
+
+			return {
+				...item,
+				status: AudioQueueItemStatus.ERROR,
+				error: lastError || new Error("音声生成がリトライ後に失敗しました"),
+			};
 		},
 		[modelConfig.speakerId, defaultFormat, t],
+	);
+
+	/**
+	 * 音声生成を実行する
+	 */
+	const generateAudio = useCallback(
+		async (item: AudioQueueItem): Promise<AudioQueueItem> => {
+			return generateAudioWithRetry(item, 3);
+		},
+		[generateAudioWithRetry],
 	);
 
 	/**
@@ -293,74 +327,111 @@ export const useStreamingTTS = (
 		clearQueueAndStop();
 	}, [clearQueueAndStop]);
 
+	/**
+	 * アイテムの状態を更新する
+	 */
+	const updateItemStatus = useCallback(
+		(
+			itemId: string,
+			status: AudioQueueItemStatus,
+			updates: Partial<AudioQueueItem> = {},
+		) => {
+			setState((prev) => ({
+				...prev,
+				queue: prev.queue.map((item) =>
+					item.id === itemId ? { ...item, status, ...updates } : item,
+				),
+			}));
+		},
+		[],
+	);
+
+	/**
+	 * キューからアイテムを削除する
+	 */
+	const removeFromQueue = useCallback((itemId: string) => {
+		setState((prev) => ({
+			...prev,
+			queue: prev.queue.filter((item) => item.id !== itemId),
+			currentQueueItem:
+				prev.currentQueueItem?.id === itemId ? null : prev.currentQueueItem,
+		}));
+	}, []);
+
+	// 音声生成用のuseEffect
 	useEffect(() => {
 		const itemToGenerate = state.queue.find(
-			(item) => !item.audioURL && !item.isGenerating && !item.error,
+			(item) => item.status === AudioQueueItemStatus.PENDING,
 		);
 
-		if (itemToGenerate) {
+		if (itemToGenerate && !state.isGenerating) {
 			const controller = new AbortController();
 			abortControllerRef.current = controller;
 
+			updateItemStatus(itemToGenerate.id, AudioQueueItemStatus.GENERATING);
 			updateState({ isGenerating: true });
-			setState((prev) => ({
-				...prev,
-				queue: prev.queue.map((item) =>
-					item.id === itemToGenerate.id
-						? { ...item, isGenerating: true }
-						: item,
-				),
-			}));
 
-			generateAudio(itemToGenerate).then((processedItem) => {
-				updateState({
-					queue: state.queue.map((item) =>
-						item.id === processedItem.id ? processedItem : item,
-					),
+			generateAudio(itemToGenerate)
+				.then((processedItem) => {
+					updateItemStatus(processedItem.id, processedItem.status, {
+						audioURL: processedItem.audioURL,
+						error: processedItem.error,
+					});
+				})
+				.catch((error) => {
+					updateItemStatus(itemToGenerate.id, AudioQueueItemStatus.ERROR, {
+						error: error instanceof Error ? error : new Error("音声生成エラー"),
+					});
+				})
+				.finally(() => {
+					updateState({ isGenerating: false });
 				});
-			});
 		}
-	}, [state.queue, generateAudio, updateState]);
+	}, [
+		state.queue,
+		state.isGenerating,
+		generateAudio,
+		updateState,
+		updateItemStatus,
+	]);
 
-	// Effect for Audio Playback
+	// 音声再生用のuseEffect
 	useEffect(() => {
 		const itemToPlay = state.queue.find(
-			(item) => item.audioURL && !item.isPlaying && !item.error,
+			(item) => item.status === AudioQueueItemStatus.READY,
 		);
 
 		if (itemToPlay && !state.isPlaying) {
+			updateItemStatus(itemToPlay.id, AudioQueueItemStatus.PLAYING);
 			updateState({ isPlaying: true, currentQueueItem: itemToPlay });
-			setState((prev) => ({
-				...prev,
-				queue: prev.queue.map((item) =>
-					item.id === itemToPlay.id ? { ...item, isPlaying: true } : item,
-				),
-			}));
 
 			playAudio(itemToPlay)
 				.then(() => {
 					console.log("Playback finished for:", itemToPlay.text);
+					updateItemStatus(itemToPlay.id, AudioQueueItemStatus.COMPLETED);
+					if (itemToPlay.audioURL) {
+						revokeObjectURL(itemToPlay.audioURL);
+					}
+					removeFromQueue(itemToPlay.id);
 				})
 				.catch((error) => {
 					console.error("Playback error:", error);
-					updateState({
+					updateItemStatus(itemToPlay.id, AudioQueueItemStatus.ERROR, {
 						error: error instanceof Error ? error : new Error("音声再生エラー"),
 					});
 				})
 				.finally(() => {
-					// 再生が完了したらキューから削除
-					setState((prev) => ({
-						...prev,
-						queue: prev.queue.filter((item) => item.id !== itemToPlay.id),
-						isPlaying: false,
-						currentQueueItem: null,
-					}));
-					if (itemToPlay.audioURL) {
-						revokeObjectURL(itemToPlay.audioURL);
-					}
+					updateState({ isPlaying: false, currentQueueItem: null });
 				});
 		}
-	}, [state.queue, state.isPlaying, playAudio, updateState]);
+	}, [
+		state.queue,
+		state.isPlaying,
+		playAudio,
+		updateState,
+		updateItemStatus,
+		removeFromQueue,
+	]);
 
 	// クリーンアップ
 	useEffect(() => {

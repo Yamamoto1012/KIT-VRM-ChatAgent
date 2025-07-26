@@ -13,6 +13,16 @@ type VRMContainerProps = {
 	categoryDepth: number;
 
 	/**
+	 * アクションプロンプトの表示状態 (カメラ位置の調整に使用)
+	 */
+	showActionPrompt: boolean;
+
+	/**
+	 * 検索結果やチャットが表示されているか (カメラ位置の調整に使用)
+	 */
+	showSearchResult: boolean;
+
+	/**
 	 * VRMWrapperへの参照
 	 * 親コンポーネントからVRMの制御を可能にする
 	 */
@@ -26,6 +36,8 @@ type VRMContainerProps = {
  */
 export const VRMContainer: FC<VRMContainerProps> = ({
 	categoryDepth,
+	showActionPrompt,
+	showSearchResult,
 	vrmWrapperRef,
 }) => {
 	// グローバル状態へのアクセス
@@ -36,6 +48,8 @@ export const VRMContainer: FC<VRMContainerProps> = ({
 	return (
 		<VRMContainerView
 			categoryDepth={categoryDepth}
+			showActionPrompt={showActionPrompt}
+			showSearchResult={showSearchResult}
 			vrmWrapperRef={vrmWrapperRef}
 			isThinking={isThinking}
 			isMuted={isMuted}

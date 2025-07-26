@@ -65,3 +65,21 @@ class SentimentResponse(BaseModel):
     """感情分析レスポンスモデル"""
     results: List[SentimentResult] = Field(..., description="分析結果のリスト")
     metadata: Dict[str, Any] = Field(..., description="処理に関するメタデータ")
+
+
+class ConversationMessage(BaseModel):
+    """会話履歴の単一メッセージ"""
+    role: Literal["user", "assistant"] = Field(..., description="メッセージの送信者")
+    content: str = Field(..., description="メッセージの内容")
+
+
+class QueryRequestWithHistory(BaseModel):
+    """会話履歴を含むクエリリクエスト"""
+    query: str = Field(..., description="ユーザーのクエリ")
+    conversation_history: Optional[List[ConversationMessage]] = Field(
+        default=[], 
+        description="過去の会話履歴"
+    )
+    context: Optional[Dict[str, Any]] = Field(None, description="追加のコンテキスト情報")
+    language: Optional[str] = Field("ja", description="言語設定")
+    stream: Optional[bool] = Field(True, description="ストリーミング応答を使用するか")

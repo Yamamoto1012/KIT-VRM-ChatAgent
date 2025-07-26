@@ -74,6 +74,8 @@ export default function App() {
 			{/* 3Dモデル表示領域 */}
 			<VRMContainer
 				categoryDepth={categoryDepth}
+				showActionPrompt={showActionPrompt}
+				showSearchResult={showSearchResult}
 				vrmWrapperRef={vrmWrapperRef}
 			/>
 
