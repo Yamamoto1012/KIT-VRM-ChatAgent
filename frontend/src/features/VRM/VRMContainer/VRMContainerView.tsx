@@ -19,6 +19,16 @@ export type VRMContainerViewProps = {
 	categoryDepth: number;
 
 	/**
+	 * アクションプロンプトの表示状態 (カメラ位置の調整に使用)
+	 */
+	showActionPrompt: boolean;
+
+	/**
+	 * 検索結果やチャットが表示されているか (カメラ位置の調整に使用)
+	 */
+	showSearchResult: boolean;
+
+	/**
 	 * VRMWrapperへの参照
 	 * 親コンポーネントからVRMの制御を可能にする
 	 */
@@ -47,10 +57,13 @@ export type VRMContainerViewProps = {
 
 // レスポンシブカメラ設定を計算する関数
 const getCameraSettings = (
-	categoryDepth: number,
+	showActionPrompt: boolean,
+	showSearchResult: boolean,
 	isMobile = false,
 	modelCameraConfig?: import("../../../types/modelConfig").CameraConfig,
 ) => {
+	// カメラを切り替える条件：アクションプロンプトが表示されており、かつ実際にアクションが実行されている
+	const shouldAdjustCamera = showActionPrompt && showSearchResult;
 	// モデル固有の設定がある場合はそれを使用
 	if (modelCameraConfig) {
 		const basePosition = isMobile
@@ -61,11 +74,11 @@ const getCameraSettings = (
 			position: [
 				basePosition[0],
 				basePosition[1],
-				categoryDepth >= 2 ? basePosition[2] - 0.5 : basePosition[2],
+				shouldAdjustCamera ? basePosition[2] - 0.5 : basePosition[2],
 			] as [number, number, number],
 			rotation: [
 				modelCameraConfig.rotation[0],
-				modelCameraConfig.rotation[1] + (categoryDepth >= 2 ? Math.PI / 8 : 0),
+				modelCameraConfig.rotation[1] + (shouldAdjustCamera ? Math.PI / 8 : 0),
 				modelCameraConfig.rotation[2],
 			] as [number, number, number],
 		};
@@ -76,12 +89,12 @@ const getCameraSettings = (
 		// モバイル用カメラ設定
 		return {
 			fov: 40,
-			position: [0.04, 1.35, categoryDepth >= 2 ? -0.3 : 1.2] as [
+			position: [0.04, 1.35, shouldAdjustCamera ? -0.3 : 1.2] as [
 				number,
 				number,
 				number,
 			],
-			rotation: [0, categoryDepth >= 2 ? Math.PI / 8 : 0, 0] as [
+			rotation: [0, shouldAdjustCamera ? Math.PI / 8 : 0, 0] as [
 				number,
 				number,
 				number,
@@ -92,12 +105,12 @@ const getCameraSettings = (
 	// デスクトップ用カメラ設定（従来通り）
 	return {
 		fov: 40,
-		position: [0.04, 1.45, categoryDepth >= 2 ? -0.5 : 1] as [
+		position: [0.04, 1.45, shouldAdjustCamera ? -0.5 : 1] as [
 			number,
 			number,
 			number,
 		],
-		rotation: [0, categoryDepth >= 2 ? Math.PI / 8 : 0, 0] as [
+		rotation: [0, shouldAdjustCamera ? Math.PI / 8 : 0, 0] as [
 			number,
 			number,
 			number,
@@ -111,6 +124,8 @@ const getCameraSettings = (
  */
 export const VRMContainerView: FC<VRMContainerViewProps> = ({
 	categoryDepth,
+	showActionPrompt,
+	showSearchResult,
 	vrmWrapperRef,
 	isThinking,
 	isMuted,
@@ -124,7 +139,8 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 	// より正確にはuseMediaQueryなどのフックを使用することもできます
 	const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 	const cameraSettings = getCameraSettings(
-		categoryDepth,
+		showActionPrompt,
+		showSearchResult,
 		isMobile,
 		modelConfig.cameraConfig,
 	);
