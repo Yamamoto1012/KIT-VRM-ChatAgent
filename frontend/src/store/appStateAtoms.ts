@@ -21,6 +21,9 @@ export const isActionPromptQuestionAtom = atom<boolean>(false);
 // ストリーミングモードの有効/無効を示すatom（デフォルトはストリーミング有効）
 export const isStreamingModeAtom = atom<boolean>(true);
 
+// コントロールメニューの表示状態のatom
+export const isControlMenuOpenAtom = atom<boolean>(false);
+
 // アプリ全体の状態をまとめて取得するatom
 export const appStateAtom = atom((get) => {
 	return {

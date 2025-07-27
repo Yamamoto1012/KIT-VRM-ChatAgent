@@ -35,5 +35,8 @@
 	"openVoiceChat": "音声チャットを開く",
 	"mute": "ミュート",
 	"unmute": "ミュート解除",
-	"selectBackground": "背景を選択"
+	"selectBackground": "背景を選択",
+	"menu": "メニュー",
+	"voiceChat": "音声チャット",
+	"close": "閉じる"
 }

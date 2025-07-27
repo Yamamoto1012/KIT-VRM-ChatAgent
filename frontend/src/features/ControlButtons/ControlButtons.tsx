@@ -1,4 +1,5 @@
 import {
+	isControlMenuOpenAtom,
 	isMutedAtom,
 	isStreamingModeAtom,
 	showInfoAtom,
@@ -24,6 +25,7 @@ export const ControlButtons: FC = () => {
 	const [showInfo, setShowInfo] = useAtom(showInfoAtom);
 	const [isMuted, setIsMuted] = useAtom(isMutedAtom);
 	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
+	const [, setIsControlMenuOpen] = useAtom(isControlMenuOpenAtom);
 	const [, setShowVoiceChat] = useAtom(showVoiceChatAtom);
 	const [, setLanguageSelectorOpen] = useAtom(languageSelectorOpenAtom);
 	const setShowModelSelector = useSetAtom(showModelSelectorAtom);
@@ -69,6 +71,13 @@ export const ControlButtons: FC = () => {
 	 */
 	const handleToggleStreamingMode = () => setIsStreamingMode(!isStreamingMode);
 
+	/**
+	 * メニューの開閉状態を処理する
+	 */
+	const handleMenuOpenChange = (isOpen: boolean) => {
+		setIsControlMenuOpen(isOpen);
+	};
+
 	return (
 		<>
 			<ControlButtonsView
@@ -83,6 +92,7 @@ export const ControlButtons: FC = () => {
 				onOpenVoiceChat={handleOpenVoiceChat}
 				onCloseInfo={handleCloseInfo}
 				onToggleStreamingMode={handleToggleStreamingMode}
+				onMenuOpenChange={handleMenuOpenChange}
 			/>
 			{/* 言語選択ダイアログ */}
 			<LanguageSelector />
