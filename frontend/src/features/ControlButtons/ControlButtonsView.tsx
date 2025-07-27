@@ -1,4 +1,5 @@
 import {
+	Image,
 	Languages,
 	Mic2,
 	UserCircle,
@@ -37,6 +38,11 @@ export type ControlButtonsViewProps = {
 	 * モデル選択ボタンを押した際のハンドラー
 	 */
 	onOpenModelSelector: () => void;
+
+	/**
+	 * 背景選択ボタンを押した際のハンドラー
+	 */
+	onOpenBackgroundSelector: () => void;
 
 	/**
 	 * 情報パネル表示切替のハンドラー
@@ -80,6 +86,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 	// onToggleInfo,
 	onOpenLanguageSelector,
 	onOpenModelSelector,
+	onOpenBackgroundSelector,
 	onToggleMute,
 	onOpenVoiceChat,
 	onCloseInfo,
@@ -143,6 +150,16 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 						icon={UserCircle}
 						onClick={onOpenModelSelector}
 						aria-label={t("selectModel")}
+						className="h-11 w-11 md:h-12 md:w-12"
+					/>
+				</div>
+
+				{/* 背景選択ボタン */}
+				<div className="order-0 md:order-6">
+					<IconButton
+						icon={Image}
+						onClick={onOpenBackgroundSelector}
+						aria-label={t("selectBackground")}
 						className="h-11 w-11 md:h-12 md:w-12"
 					/>
 				</div>

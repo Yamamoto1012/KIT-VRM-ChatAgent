@@ -1,0 +1,10 @@
+{
+	"selectBackground": "Select Background",
+	"selectBackgroundDescription": "Please select your preferred background",
+	"currentBackground": "Current background:",
+	"backgrounds": {
+		"none": "Default",
+		"room": "Room",
+		"kohai": "Ruined Town"
+	}
+}

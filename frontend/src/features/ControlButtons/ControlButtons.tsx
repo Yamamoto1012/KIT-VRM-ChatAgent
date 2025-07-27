@@ -4,10 +4,12 @@ import {
 	showInfoAtom,
 	showVoiceChatAtom,
 } from "@/store/appStateAtoms";
+import { showBackgroundSelectorAtom } from "@/store/backgroundAtoms";
 import { languageSelectorOpenAtom } from "@/store/languageAtoms";
 import { showModelSelectorAtom } from "@/store/modelAtoms";
 import { useAtom, useSetAtom } from "jotai";
 import type { FC } from "react";
+import { BackgroundSelectorDialog } from "../BackgroundSelector/BackgroundSelectorDialog";
 import { LanguageSelector } from "../LanguageSelector/LanguageSelector";
 import { ModelSelectorDialog } from "../ModelSelector/ModelSelectorDialog";
 import { ControlButtonsView } from "./ControlButtonsView";
@@ -25,6 +27,7 @@ export const ControlButtons: FC = () => {
 	const [, setShowVoiceChat] = useAtom(showVoiceChatAtom);
 	const [, setLanguageSelectorOpen] = useAtom(languageSelectorOpenAtom);
 	const setShowModelSelector = useSetAtom(showModelSelectorAtom);
+	const setShowBackgroundSelector = useSetAtom(showBackgroundSelectorAtom);
 
 	/**
 	 * 言語選択ダイアログを開く
@@ -35,6 +38,11 @@ export const ControlButtons: FC = () => {
 	 * モデル選択ダイアログを開く
 	 */
 	const handleOpenModelSelector = () => setShowModelSelector(true);
+
+	/**
+	 * 背景選択ダイアログを開く
+	 */
+	const handleOpenBackgroundSelector = () => setShowBackgroundSelector(true);
 
 	/**
 	 * 情報パネルの表示状態を切り替える
@@ -69,6 +77,7 @@ export const ControlButtons: FC = () => {
 				isStreamingMode={isStreamingMode}
 				onOpenLanguageSelector={handleOpenLanguageSelector}
 				onOpenModelSelector={handleOpenModelSelector}
+				onOpenBackgroundSelector={handleOpenBackgroundSelector}
 				onToggleInfo={handleToggleInfo}
 				onToggleMute={handleToggleMute}
 				onOpenVoiceChat={handleOpenVoiceChat}
@@ -79,6 +88,8 @@ export const ControlButtons: FC = () => {
 			<LanguageSelector />
 			{/* モデル選択ダイアログ */}
 			<ModelSelectorDialog />
+			{/* 背景選択ダイアログ */}
+			<BackgroundSelectorDialog />
 		</>
 	);
 };

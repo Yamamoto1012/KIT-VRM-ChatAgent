@@ -1,0 +1,10 @@
+{
+	"selectBackground": "背景を選択",
+	"selectBackgroundDescription": "お好みの背景を選択してください",
+	"currentBackground": "現在の背景:",
+	"backgrounds": {
+		"none": "デフォルト",
+		"room": "部屋",
+		"kohai": "荒廃した町"
+	}
+}
