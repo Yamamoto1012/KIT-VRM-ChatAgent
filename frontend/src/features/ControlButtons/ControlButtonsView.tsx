@@ -158,6 +158,9 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 
 	const handleButtonClick = (onClick: () => void) => {
 		onClick();
+	};
+
+	const handleBackdropClick = () => {
 		setIsMenuOpen(false);
 		onMenuOpenChange?.(false);
 	};
@@ -167,7 +170,17 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 			{/* フルスクリーンメニュー */}
 			<AnimatePresence>
 				{isMenuOpen && (
-					<div className="fixed inset-0 z-40">
+					<button
+						type="button"
+						className="fixed inset-0 z-40 bg-transparent border-none cursor-default"
+						onClick={handleBackdropClick}
+						onKeyDown={(e) => {
+							if (e.key === "Escape") {
+								handleBackdropClick();
+							}
+						}}
+						aria-label="Close menu"
+					>
 						{/* 閉じるボタン */}
 						<motion.div
 							initial={{ opacity: 0, scale: 0.8 }}
@@ -175,6 +188,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 							exit={{ opacity: 0, scale: 0.8 }}
 							transition={{ delay: 0.1, duration: 0.2 }}
 							className="absolute top-4 right-4"
+							onClick={(e) => e.stopPropagation()}
 						>
 							<IconButton
 								icon={X}
@@ -195,6 +209,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 							exit={{ y: 100, opacity: 0 }}
 							transition={{ delay: 0.2, duration: 0.4, ease: "easeOut" }}
 							className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-6xl px-8"
+							onClick={(e) => e.stopPropagation()}
 						>
 							<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 place-items-center">
 								{menuButtons.map((button, index) => (
@@ -242,7 +257,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 								))}
 							</div>
 						</motion.div>
-					</div>
+					</button>
 				)}
 			</AnimatePresence>
 
