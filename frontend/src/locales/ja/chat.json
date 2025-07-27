@@ -30,5 +30,10 @@
 	"streamingMode": "ストリーミングモード",
 	"nonStreamingMode": "非ストリーミングモード",
 	"toggleStreamingMode": "ストリーミングモードを切り替え",
-	"selectModel": "モデルを選択"
+	"selectModel": "モデルを選択",
+	"selectLanguage": "言語を選択",
+	"openVoiceChat": "音声チャットを開く",
+	"mute": "ミュート",
+	"unmute": "ミュート解除",
+	"selectBackground": "背景を選択"
 }
