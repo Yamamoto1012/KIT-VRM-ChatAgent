@@ -35,5 +35,8 @@
 	"openVoiceChat": "Open Voice Chat",
 	"mute": "Mute",
 	"unmute": "Unmute",
-	"selectBackground": "Select Background"
+	"selectBackground": "Select Background",
+	"menu": "Menu",
+	"voiceChat": "Voice Chat",
+	"close": "Close"
 }
