@@ -226,7 +226,11 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 												ease: "easeOut",
 											},
 										}}
-										whileHover={{ scale: 1.1, y: -5 }}
+										whileHover={{
+											scale: 1.1,
+											y: -5,
+											transition: { duration: 0.2, ease: "easeOut" },
+										}}
 										whileTap={{ scale: 0.95 }}
 										className="flex flex-col items-center gap-3 cursor-pointer group w-full"
 										onClick={() => handleButtonClick(button.onClick)}
@@ -240,7 +244,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 												icon={button.icon}
 												onClick={() => {}}
 												aria-label={button.label}
-												className={`h-20 w-20 md:h-24 md:w-24 relative z-10 ${
+												className={`h-20 w-20 md:h-24 md:w-24 relative z-10 hover:text-white ${
 													button.isActive
 														? "ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/25"
 														: ""
