@@ -30,5 +30,13 @@
 	"streamingMode": "Streaming Mode",
 	"nonStreamingMode": "Non-Streaming Mode",
 	"toggleStreamingMode": "Toggle Streaming Mode",
-	"selectModel": "Select Model"
+	"selectModel": "Select Model",
+	"selectLanguage": "Select Language",
+	"openVoiceChat": "Open Voice Chat",
+	"mute": "Mute",
+	"unmute": "Unmute",
+	"selectBackground": "Select Background",
+	"menu": "Menu",
+	"voiceChat": "Voice Chat",
+	"close": "Close"
 }

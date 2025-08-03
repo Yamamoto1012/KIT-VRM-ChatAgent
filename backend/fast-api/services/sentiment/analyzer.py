@@ -1,7 +1,7 @@
 """
 Sentiment Analyzer
 
-ハイブリッド感情分析（ルールベース＋ONNX)
+ONNX機械学習モデルを使用した感情分析器
 """
 import os
 import re
@@ -33,41 +33,54 @@ class SentimentCategory(str, Enum):
 
 class SentimentAnalyzer:
     """
-    ハイブリッド感情分析器
-    ルールベース＋ONNXの組み合わせによる高精度分析
+    ONNXモデルのみを使用した感情分析器
     """
     
     def __init__(self):
-        logger.info("ハイブリッド感情分析器を使用")
-        self._impl = self._create_hybrid_analyzer()
+        if sentiment_config.use_hybrid:
+            logger.info("ハイブリッド感情分析器を使用")
+            self._impl = self._create_hybrid_analyzer()
+        else:
+            logger.info("ONNX感情分析器を使用")
+            self._impl = self._create_onnx_analyzer()
     
     def _create_hybrid_analyzer(self):
-        """ハイブリッド分析器を作成"""
+        """ハイブリッド分析器を作成（後方互換性のため保持）"""
         from .improved_hybrid_analyzer import ImprovedHybridAnalyzer
         
-        # 設定から読み込み
         return ImprovedHybridAnalyzer(
             confidence_threshold=sentiment_config.confidence_threshold,
             enable_onnx=sentiment_config.enable_onnx,
             onnx_model_path=sentiment_config.onnx_model_path
         )
     
+    def _create_onnx_analyzer(self):
+        """ONNX分析器を作成"""
+        from .onnx_analyzer import ONNXSentimentAnalyzer
+        
+        return ONNXSentimentAnalyzer(
+            model_path=sentiment_config.onnx_model_path
+        )
+    
     def analyze(self, text: str) -> Tuple[float, SentimentCategory]:
         """
         感情分析を実行する
-        
-        後方互換性を保つインターフェース
         """
         try:
-            if hasattr(self._impl, 'analyze'):
+            if not text.strip():
+                return 50.0, SentimentCategory.NEUTRAL
+                
+            if sentiment_config.use_hybrid:
+                # ハイブリッド分析の場合はメタデータを除外
                 result = self._impl.analyze(text)
-                # ハイブリッドの場合はメタデータを除外
                 if len(result) > 2:
                     return result[0], result[1]
                 return result
             else:
-                # フォールバック
-                return 50.0, SentimentCategory.NEUTRAL
+                # ONNX のみの場合
+                score, category, class_probs = self._impl.analyze(text)
+                return score, category
+                
         except Exception as e:
             logger.error(f"感情分析エラー: {e}")
             return 50.0, SentimentCategory.NEUTRAL
@@ -76,18 +89,56 @@ class SentimentAnalyzer:
         """
         メタデータ付きで感情分析を実行する
         """
-        return self._impl.analyze(text)
+        try:
+            if not text.strip():
+                return 50.0, SentimentCategory.NEUTRAL, {'confidence': 0.0, 'method': 'empty'}
+                
+            if sentiment_config.use_hybrid:
+                return self._impl.analyze(text)
+            else:
+                # ONNX のみの場合
+                score, category, class_probs = self._impl.analyze(text)
+                
+                # 信頼度は最も高い確率値を使用
+                confidence = max(class_probs.values())
+                
+                metadata = {
+                    'confidence': confidence,
+                    'method': 'onnx',
+                    'class_probabilities': class_probs
+                }
+                
+                return score, category, metadata
+                
+        except Exception as e:
+            logger.error(f"感情分析エラー: {e}")
+            return 50.0, SentimentCategory.NEUTRAL, {
+                'confidence': 0.0,
+                'method': 'error',
+                'error': str(e)
+            }
     
     def get_analyzer_info(self) -> Dict[str, Any]:
         """分析器の情報を取得"""
         info = {
             'implementation': type(self._impl).__name__,
-            'version': '2.0.0'
+            'version': '2.1.0',
+            'mode': 'hybrid' if sentiment_config.use_hybrid else 'onnx_only'
         }
         
-        info.update(self._impl.get_analyzer_status())
+        if hasattr(self._impl, 'get_analyzer_status'):
+            info.update(self._impl.get_analyzer_status())
+        elif hasattr(self._impl, 'get_model_info'):
+            info.update(self._impl.get_model_info())
+            
         return info
     
     def get_metrics(self) -> Dict[str, Any]:
         """パフォーマンスメトリクスを取得"""
-        return self._impl.get_metrics() 
+        if hasattr(self._impl, 'get_metrics'):
+            return self._impl.get_metrics()
+        else:
+            return {
+                'analyzer_type': 'onnx_only',
+                'available': self._impl.is_available() if hasattr(self._impl, 'is_available') else True
+            } 

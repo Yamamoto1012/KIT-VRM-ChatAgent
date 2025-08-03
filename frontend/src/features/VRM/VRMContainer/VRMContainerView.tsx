@@ -2,6 +2,10 @@ import { Canvas } from "@react-three/fiber";
 import { AnimatePresence } from "framer-motion";
 import { useAtom } from "jotai";
 import type { FC, RefObject } from "react";
+import {
+	selectedBackgroundAtom,
+	showGridHelperAtom,
+} from "../../../store/backgroundAtoms";
 import type { AudioStreamingState } from "../../../store/chatAtoms";
 import { selectedModelConfigAtom } from "../../../store/modelAtoms";
 import { ThinkingIndicator } from "../../ThinkingIndicator/ThinkingIndicator";
@@ -134,6 +138,10 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 }) => {
 	// 選択されたモデル設定を取得
 	const [modelConfig] = useAtom(selectedModelConfigAtom);
+	// 選択された背景画像を取得
+	const [selectedBackground] = useAtom(selectedBackgroundAtom);
+	// グリッドヘルパーの表示状態を取得
+	const [showGridHelper] = useAtom(showGridHelperAtom);
 
 	// 画面サイズを動的に検出（簡易版）
 	// より正確にはuseMediaQueryなどのフックを使用することもできます
@@ -148,9 +156,18 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 	return (
 		<>
 			{/* 3Dモデル表示エリア */}
-			<div className="absolute inset-0">
+			<div
+				className="absolute inset-0"
+				style={{
+					backgroundImage: `url('${selectedBackground.path}')`,
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+				}}
+			>
 				<Canvas
 					flat
+					style={{ background: "transparent" }}
+					gl={{ alpha: true }}
 					camera={{
 						fov: cameraSettings.fov,
 						near: 0.01,
@@ -159,7 +176,7 @@ export const VRMContainerView: FC<VRMContainerViewProps> = ({
 					}}
 				>
 					<CameraController cameraSettings={cameraSettings} />
-					<gridHelper />
+					{showGridHelper && <gridHelper />}
 					<VRMWrapper
 						key={modelConfig.id}
 						categoryDepth={categoryDepth}

@@ -33,6 +33,19 @@ def get_sentiment_analyzer() -> SentimentAnalyzer:
     return _analyzer_instance
 
 
+def reset_sentiment_analyzer() -> None:
+    """
+    キャッシュされた感情分析インスタンスをリセットする
+    
+    Note:
+        設定変更後にアナライザーを再初期化したい場合に使用。
+        次回get_sentiment_analyzer()呼び出し時に新しいインスタンスが作成される。
+    """
+    global _analyzer_instance
+    _analyzer_instance = None
+    logger.info("感情分析インスタンスをリセットしました")
+
+
 def analyze_sentiment_batch(texts: List[str]) -> List[SentimentResult]:
     """
     テキストのバッチ感情分析を実行

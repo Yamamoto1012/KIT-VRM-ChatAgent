@@ -1,5 +1,5 @@
-model_name: kit-nlp/bert-base-japanese-sentiment-irony
+model_name: koheiduck/bert-japanese-finetuned-sentiment
 max_length: 128
-num_labels: 2
-label_names: {0: 'ポジティブ', 1: 'ネガティブ'}
+num_labels: 3
+label_names: {0: 'NEUTRAL', 1: 'NEGATIVE', 2: 'POSITIVE'}
 created_by: convert_to_onnx.py

@@ -3,11 +3,46 @@ AivisSpeech API サーバーのエントリーポイント
 
 FastAPIアプリケーションを初期化し、各種ルーターを登録する
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings, logger
 from routers import health, speech, dictionary, llm, sentiment
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    アプリケーションのライフサイクル管理
+    
+    Args:
+        app: FastAPIアプリケーションインスタンス
+    """
+    # 起動時処理
+    try:
+        from services.sentiment import get_sentiment_analyzer, reset_sentiment_analyzer
+        
+        # キャッシュされたインスタンスをリセットして最新の設定を適用
+        reset_sentiment_analyzer()
+        
+        logger.info("感情分析モデルを事前ロード中...")
+        analyzer = get_sentiment_analyzer()
+        # ダミーテキストで初期化を強制
+        analyzer.analyze("初期化テスト")
+        logger.info("感情分析モデルのロード完了")
+    except Exception as e:
+        logger.warning(f"感情分析モデルの事前ロードに失敗: {e}")
+    
+    yield
+    
+    # 終了時処理
+    try:
+        logger.info("アプリケーション終了処理を開始")
+        # 必要に応じてリソースの解放処理を追加
+        logger.info("アプリケーション終了処理完了")
+    except Exception as e:
+        logger.error(f"終了処理中にエラーが発生: {e}")
 
 
 def create_application() -> FastAPI:
@@ -24,7 +59,8 @@ def create_application() -> FastAPI:
         version=settings.api_version,
         docs_url=settings.docs_url,
         redoc_url=settings.redoc_url,
-        openapi_url=settings.openapi_url
+        openapi_url=settings.openapi_url,
+        lifespan=lifespan
     )
     
     # CORSの設定

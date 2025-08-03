@@ -82,7 +82,7 @@ def convert_model_to_onnx(
         )
         
         # ONNXファイルのパス
-        onnx_path = output_path / "japanese_sentiment.onnx"
+        onnx_path = output_path / "bert-japanese-finetuned-sentiment.onnx"
         
         print(f"ONNXエクスポート中: {onnx_path}")
         
@@ -112,7 +112,7 @@ def convert_model_to_onnx(
         # 量子化
         if quantize and QUANTIZATION_AVAILABLE:
             print("モデルを量子化中...")
-            quantized_path = output_path / "japanese_sentiment_quantized.onnx"
+            quantized_path = output_path / "bert-japanese-finetuned-sentiment.onnx"
             
             quantize_dynamic(
                 str(onnx_path),
@@ -165,11 +165,8 @@ def test_converted_model(model_dir: str):
         import numpy as np
         
         # パス設定
-        model_path = Path(model_dir) / "japanese_sentiment_quantized.onnx"
+        model_path = Path(model_dir) / "bert-japanese-finetuned-sentiment.onnx"
         tokenizer_path = Path(model_dir) / "tokenizer"
-        
-        if not model_path.exists():
-            model_path = Path(model_dir) / "japanese_sentiment.onnx"
         
         if not model_path.exists():
             print("ONNXモデルが見つかりません")
@@ -227,7 +224,7 @@ def main():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="kit-nlp/bert-base-japanese-sentiment-irony",
+        default="koheiduck/bert-japanese-finetuned-sentiment",
         help="Hugging Faceモデル名"
     )
     parser.add_argument(
