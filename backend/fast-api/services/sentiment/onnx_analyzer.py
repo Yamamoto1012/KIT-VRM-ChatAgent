@@ -48,7 +48,7 @@ class ONNXSentimentAnalyzer:
         return os.path.join(
             os.path.dirname(__file__),
             'models',
-            'japanese_sentiment_quantized.onnx'
+            'bert-japanese-finetuned-sentiment.onnx'
         )
     
     def _get_default_tokenizer_path(self) -> str:
@@ -135,8 +135,8 @@ class ONNXSentimentAnalyzer:
             logger.error(f"トークナイザーの初期化に失敗: {e}")
             # フォールバック: 事前学習済みモデルから直接読み込み
             try:
-                tokenizer = AutoTokenizer.from_pretrained("kit-nlp/bert-base-japanese-sentiment-irony")
-                logger.info("フォールバック: 事前学習済みトークナイザーを使用")
+                tokenizer = AutoTokenizer.from_pretrained("koheiduck/bert-japanese-finetuned-sentiment")
+                logger.info("フォールバック: koheiduck/bert-japanese-finetuned-sentiment トークナイザーを使用")
                 return tokenizer
             except Exception as fallback_error:
                 logger.error(f"フォールバックも失敗: {fallback_error}")
@@ -179,12 +179,13 @@ class ONNXSentimentAnalyzer:
             # 各クラスの確率も返す
             if len(probs) >= 3:
                 class_probs = {
-                    'negative': float(probs[0]),
-                    'neutral': float(probs[1]),
-                    'positive': float(probs[2])
+                    'positive': float(probs[2]),
+                    'neutral': float(probs[0]),
+                    'negative': float(probs[1])
                 }
             else:
-                # バイナリ分類の場合: [positive, negative]
+                # バイナリ分類の場合: koheiduck/bert-japanese-finetuned-sentiment (2クラス版)
+                # 実際のモデル動作に基づく修正: Index 0: POSITIVE, Index 1: NEGATIVE
                 class_probs = {
                     'positive': float(probs[0]),
                     'neutral': 0.0,
@@ -207,14 +208,14 @@ class ONNXSentimentAnalyzer:
     def _probs_to_score_and_category(self, probs: np.ndarray) -> Tuple[float, SentimentCategory]:
         """確率からスコアとカテゴリを決定"""
         if len(probs) >= 3:
-            # 3クラス分類: [negative, neutral, positive]
-            negative_prob = probs[0]
-            neutral_prob = probs[1]
+            # 3クラス分類: [neutral, negative, positive]
+            neutral_prob = probs[0]
+            negative_prob = probs[1]
             positive_prob = probs[2]
             
             # スコアを0-100で計算
-            # positive側に重みを付けてスコア化
-            score = (positive_prob - negative_prob + 1) / 2 * 100
+            # positive * 100 + neutral * 50 + negative * 0
+            score = positive_prob * 100 + neutral_prob * 50 + negative_prob * 0
             
         else:
             # バイナリ分類: [positive, negative]
@@ -268,6 +269,3 @@ class ONNXSentimentAnalyzer:
                 'available': False,
                 'error': str(e)
             }
-
-
- 
