@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import "./App.css";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "./components/AppLayout";
 import {
@@ -32,7 +32,6 @@ export default function App() {
 	const [isControlMenuOpen] = useAtom(isControlMenuOpenAtom);
 	const [showBottomNavigation] = useAtom(showBottomNavigationAtom);
 	const [currentLanguage] = useAtom(currentLanguageAtom);
-	const setCurrentScreen = useSetAtom(currentScreenAtom);
 	const { i18n } = useTranslation();
 
 	// アプリ起動時に保存された言語設定とi18nextを同期
