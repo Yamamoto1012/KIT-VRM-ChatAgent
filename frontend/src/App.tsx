@@ -19,10 +19,7 @@ import {
 	showVoiceChatAtom,
 } from "./store/appStateAtoms";
 import { currentLanguageAtom } from "./store/languageAtoms";
-import {
-	currentScreenAtom,
-	showBottomNavigationAtom,
-} from "./store/navigationAtoms";
+import { showBottomNavigationAtom } from "./store/navigationAtoms";
 
 /**
  * アプリケーションのメインコンポーネント
