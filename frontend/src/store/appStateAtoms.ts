@@ -1,8 +1,5 @@
 import { atom } from "jotai";
 
-// 情報パネル表示状態のatom
-export const showInfoAtom = atom<boolean>(false);
-
 // 音声のミュート状態のatom
 export const isMutedAtom = atom<boolean>(false);
 
@@ -27,7 +24,6 @@ export const isControlMenuOpenAtom = atom<boolean>(false);
 // アプリ全体の状態をまとめて取得するatom
 export const appStateAtom = atom((get) => {
 	return {
-		showInfo: get(showInfoAtom),
 		isMuted: get(isMutedAtom),
 		isDirectChatQuestion: get(isDirectChatQuestionAtom),
 		showVoiceChat: get(showVoiceChatAtom),

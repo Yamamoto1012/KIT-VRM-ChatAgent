@@ -2,7 +2,6 @@ import type { Category } from "@/features/CategoryNavigator/components/CategoryC
 import { CategorySection } from "@/features/CategorySection/CategorySection";
 import type { ChatInterfaceHandle } from "@/features/ChatInterface/ChatInterface";
 import { ChatSection } from "@/features/ChatInterface/ChatSection";
-import { InfoPanel } from "@/features/InfoPanel/InfoPanel";
 import { SimpleMobileChat } from "@/features/SimpleMobileChat/SimpleMobileChat";
 import type { VRMWrapperHandle } from "@/features/VRM/VRMWrapper/VRMWrapper";
 import { showVoiceChatAtom } from "@/store/appStateAtoms";
@@ -42,9 +41,6 @@ export type ScreenManagerViewProps = {
 
 	// VRM関連
 	vrmWrapperRef: RefObject<VRMWrapperHandle | null>;
-
-	// InfoPanel関連
-	onCloseInfo: () => void;
 };
 
 /**
@@ -64,7 +60,6 @@ export type ScreenManagerViewProps = {
  * @param showChat - チャットセクションの表示状態
  * @param chatInterfaceRef - ChatInterfaceコンポーネントへの参照
  * @param vrmWrapperRef - VRMWrapperコンポーネントへの参照
- * @param onCloseInfo - 情報パネルを閉じるハンドラー
  */
 export const ScreenManagerView: FC<ScreenManagerViewProps> = ({
 	currentScreen,
@@ -82,7 +77,6 @@ export const ScreenManagerView: FC<ScreenManagerViewProps> = ({
 	showChat,
 	chatInterfaceRef,
 	vrmWrapperRef,
-	onCloseInfo,
 }) => {
 	const setShowVoiceChat = useSetAtom(showVoiceChatAtom);
 	const { t } = useTranslation("navigation");
@@ -177,19 +171,6 @@ export const ScreenManagerView: FC<ScreenManagerViewProps> = ({
 								<h2 className="text-2xl font-bold mb-4">{t("voice")}</h2>
 								<p className="text-lg opacity-80">{t("voiceDialogWillOpen")}</p>
 							</div>
-						</motion.div>
-					)}
-
-					{currentScreen === "info" && (
-						<motion.div
-							key="info"
-							className="absolute inset-0"
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							exit={{ opacity: 0 }}
-							transition={{ duration: 0.2 }}
-						>
-							<InfoPanel onClose={onCloseInfo} />
 						</motion.div>
 					)}
 				</AnimatePresence>

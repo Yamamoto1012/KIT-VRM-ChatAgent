@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import "./App.css";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "./components/AppLayout";
 import {
@@ -19,10 +19,7 @@ import {
 	showVoiceChatAtom,
 } from "./store/appStateAtoms";
 import { currentLanguageAtom } from "./store/languageAtoms";
-import {
-	currentScreenAtom,
-	showBottomNavigationAtom,
-} from "./store/navigationAtoms";
+import { showBottomNavigationAtom } from "./store/navigationAtoms";
 
 /**
  * アプリケーションのメインコンポーネント
@@ -32,7 +29,6 @@ export default function App() {
 	const [isControlMenuOpen] = useAtom(isControlMenuOpenAtom);
 	const [showBottomNavigation] = useAtom(showBottomNavigationAtom);
 	const [currentLanguage] = useAtom(currentLanguageAtom);
-	const setCurrentScreen = useSetAtom(currentScreenAtom);
 	const { i18n } = useTranslation();
 
 	// アプリ起動時に保存された言語設定とi18nextを同期
@@ -68,11 +64,6 @@ export default function App() {
 		originalHandleAskQuestion(question);
 	};
 
-	const handleCloseInfo = () => {
-		// 情報パネルを閉じて、ホーム画面に戻る
-		setCurrentScreen("home");
-	};
-
 	return (
 		<AppLayout>
 			{/* 3Dモデル表示領域 */}
@@ -102,7 +93,6 @@ export default function App() {
 							showChat={showChat}
 							chatInterfaceRef={chatInterfaceRef}
 							vrmWrapperRef={vrmWrapperRef}
-							onCloseInfo={handleCloseInfo}
 						/>
 					)}
 
