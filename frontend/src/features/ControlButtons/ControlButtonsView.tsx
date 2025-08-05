@@ -15,14 +15,8 @@ import { useState } from "react";
 import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "../IconButton/IconButton";
-import { InfoPanel } from "../InfoPanel/InfoPanel";
 
 export type ControlButtonsViewProps = {
-	/**
-	 * 情報パネルの表示状態
-	 */
-	showInfo: boolean;
-
 	/**
 	 * ミュート状態
 	 */
@@ -54,11 +48,6 @@ export type ControlButtonsViewProps = {
 	onOpenBackgroundSelector: () => void;
 
 	/**
-	 * 情報パネル表示切替のハンドラー
-	 */
-	onToggleInfo: () => void;
-
-	/**
 	 * ミュート状態切替のハンドラー
 	 */
 	onToggleMute: () => void;
@@ -69,11 +58,6 @@ export type ControlButtonsViewProps = {
 	onOpenVoiceChat: () => void;
 
 	/**
-	 * 情報パネルを閉じるハンドラー
-	 */
-	onCloseInfo: () => void;
-
-	/**
 	 * ストリーミングモード切替のハンドラー
 	 */
 	onToggleStreamingMode: () => void;
@@ -81,24 +65,18 @@ export type ControlButtonsViewProps = {
 
 /**
  * 画面右下に配置されるコントロールボタン群のプレゼンテーションコンポーネント
- * @param showInfo - 情報パネルの表示状態
  * @param isMuted - ミュート状態
- * @param onToggleInfo - 情報パネル表示切替のハンドラー
  * @param onToggleMute - ミュート状態切替のハンドラー
  * @param onOpenVoiceChat - 音声チャットを開くハンドラー
- * @param onCloseInfo - 情報パネルを閉じるハンドラー
  */
 export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
-	showInfo,
 	isMuted,
 	isStreamingMode,
-	// onToggleInfo,
 	onOpenLanguageSelector,
 	onOpenModelSelector,
 	onOpenBackgroundSelector,
 	onToggleMute,
 	onOpenVoiceChat,
-	onCloseInfo,
 	onToggleStreamingMode,
 	onMenuOpenChange,
 }) => {
@@ -275,9 +253,6 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 					</motion.div>
 				</div>
 			)}
-
-			{/* 情報パネル */}
-			{showInfo && <InfoPanel onClose={onCloseInfo} />}
 		</>
 	);
 };

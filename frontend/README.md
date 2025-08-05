@@ -52,7 +52,6 @@ frontend/
 │   │   ├── ScreenManager/ # 画面遷移管理
 │   │   ├── LanguageSelector/ # 言語切り替え
 │   │   ├── SimpleMobileChat/ # モバイル用簡素チャット
-│   │   ├── InfoPanel/     # 情報パネル
 │   │   └── ...           # その他機能
 │   ├── hooks/             # カスタムフック（音声・TTS・VRM制御）
 │   ├── store/             # Jotaiアトム（状態管理）

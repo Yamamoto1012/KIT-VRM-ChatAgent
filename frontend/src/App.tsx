@@ -68,11 +68,6 @@ export default function App() {
 		originalHandleAskQuestion(question);
 	};
 
-	const handleCloseInfo = () => {
-		// 情報パネルを閉じて、ホーム画面に戻る
-		setCurrentScreen("home");
-	};
-
 	return (
 		<AppLayout>
 			{/* 3Dモデル表示領域 */}
@@ -102,7 +97,6 @@ export default function App() {
 							showChat={showChat}
 							chatInterfaceRef={chatInterfaceRef}
 							vrmWrapperRef={vrmWrapperRef}
-							onCloseInfo={handleCloseInfo}
 						/>
 					)}
 

@@ -1,7 +1,7 @@
 import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import type { NavigationScreen } from "@/store/navigationAtoms";
 import { AnimatePresence, motion } from "framer-motion";
-import { Info, MessageCircle, MessageSquare, Mic } from "lucide-react";
+import { MessageCircle, MessageSquare, Mic } from "lucide-react";
 import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -40,11 +40,6 @@ const navigationItems = [
 		id: "voice" as NavigationScreen,
 		labelKey: "voice",
 		icon: Mic,
-	},
-	{
-		id: "info" as NavigationScreen,
-		labelKey: "info",
-		icon: Info,
 	},
 ];
 

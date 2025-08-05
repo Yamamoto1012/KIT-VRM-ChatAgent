@@ -2,7 +2,6 @@ import {
 	isControlMenuOpenAtom,
 	isMutedAtom,
 	isStreamingModeAtom,
-	showInfoAtom,
 	showVoiceChatAtom,
 } from "@/store/appStateAtoms";
 import { showBackgroundSelectorAtom } from "@/store/backgroundAtoms";
@@ -22,7 +21,6 @@ import { ControlButtonsView } from "./ControlButtonsView";
  */
 export const ControlButtons: FC = () => {
 	// グローバル状態の管理
-	const [showInfo, setShowInfo] = useAtom(showInfoAtom);
 	const [isMuted, setIsMuted] = useAtom(isMutedAtom);
 	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
 	const [, setIsControlMenuOpen] = useAtom(isControlMenuOpenAtom);
@@ -47,19 +45,9 @@ export const ControlButtons: FC = () => {
 	const handleOpenBackgroundSelector = () => setShowBackgroundSelector(true);
 
 	/**
-	 * 情報パネルの表示状態を切り替える
-	 */
-	const handleToggleInfo = () => setShowInfo(!showInfo);
-
-	/**
 	 * 音声のミュート状態を切り替える
 	 */
 	const handleToggleMute = () => setIsMuted(!isMuted);
-
-	/**
-	 * 情報パネルを閉じる
-	 */
-	const handleCloseInfo = () => setShowInfo(false);
 
 	/**
 	 * 音声チャットを開く
@@ -81,16 +69,13 @@ export const ControlButtons: FC = () => {
 	return (
 		<>
 			<ControlButtonsView
-				showInfo={showInfo}
 				isMuted={isMuted}
 				isStreamingMode={isStreamingMode}
 				onOpenLanguageSelector={handleOpenLanguageSelector}
 				onOpenModelSelector={handleOpenModelSelector}
 				onOpenBackgroundSelector={handleOpenBackgroundSelector}
-				onToggleInfo={handleToggleInfo}
 				onToggleMute={handleToggleMute}
 				onOpenVoiceChat={handleOpenVoiceChat}
-				onCloseInfo={handleCloseInfo}
 				onToggleStreamingMode={handleToggleStreamingMode}
 				onMenuOpenChange={handleMenuOpenChange}
 			/>
