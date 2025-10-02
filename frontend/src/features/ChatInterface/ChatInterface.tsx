@@ -66,15 +66,15 @@ export const ChatInterface = forwardRef<
 	}, []);
 
 	const pushMessage = useCallback(
-		(msg: { text: string; isUser: boolean }) => {
-			const enriched = { ...msg, id: createId() };
-			addMessage(enriched);
+		(msg: { text: string; isUser: boolean; id: number }) => {
+			addMessage(msg);
 		},
-		[addMessage, createId],
+		[addMessage],
 	);
 
 	useImperativeHandle(ref, () => ({
-		sendMessage: (text: string) => pushMessage({ text, isUser: true }),
+		sendMessage: (text: string) =>
+			pushMessage({ text, isUser: true, id: createId() }),
 		stopGeneration: chatStreaming.stopGeneration,
 	}));
 
@@ -90,31 +90,28 @@ export const ChatInterface = forwardRef<
 		const trimmed = input.trim();
 		if (!trimmed || chatStreaming.state.isGenerating) return;
 
-		// ユーザーメッセージのオブジェクトを先に作成
-		const userMessage: ConversationMessage = {
-			role: "user",
-			content: trimmed,
-		};
+		const userMessageId = createId();
+		const aiMessageId = createId();
 
-		// Jotaiの状態に追加
-		pushMessage({ text: userMessage.content, isUser: true });
+		pushMessage({ text: trimmed, isUser: true, id: userMessageId });
 
-		// 古い `messages` 配列に、新しいユーザーメッセージを追加して、最新の会話履歴を作成
+		// 会話履歴を準備（最新のユーザーメッセージも反映）
 		const conversationHistory: ConversationMessage[] = [
 			...messages
-				.slice(-19) // 1つ減らす
+				.slice(-19)
 				.map((msg) => ({
 					role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
 					content: msg.text,
 				}))
 				.filter((msg) => msg.content.trim()),
-			userMessage, // ここで追加
+			{ role: "user", content: trimmed },
 		];
 
 		await chatStreaming.generateResponse(
 			trimmed,
 			conversationHistory,
 			isStreamingMode,
+			aiMessageId, // AIメッセージIDを渡す
 		);
 
 		setInput("");

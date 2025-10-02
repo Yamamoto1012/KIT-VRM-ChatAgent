@@ -52,10 +52,10 @@ export interface ChatStreamingResult {
 		query: string,
 		conversationHistory: ConversationMessage[],
 		isStreamingMode: boolean,
+		aiMessageId: number, // AIメッセージIDを外部から受け取る
 	) => Promise<void>;
 	/** 現在の生成処理を停止する関数 */
-	stopGeneration: () => void;
-	/** テキストアニメーション表示関数 */
+	stopGeneration: () => void /** テキストアニメーション表示関数 */;
 	animateText: (speed?: number) => void;
 }
 
@@ -141,15 +141,6 @@ export const useChatStreaming = ({
 	});
 
 	// ===== ユーティリティ関数 =====
-	/**
-	 * 一意のメッセージIDを生成
-	 * タイムスタンプとカウンターを組み合わせて重複を防ぐ
-	 */
-	const messageIdCounter = useRef(0);
-	const createId = useCallback(() => {
-		messageIdCounter.current += 1;
-		return Date.now() * 1000 + messageIdCounter.current;
-	}, []);
 
 	/**
 	 * バッファリング機能付きチャンク送信関数
@@ -264,6 +255,7 @@ export const useChatStreaming = ({
 			query: string,
 			conversationHistory: ConversationMessage[],
 			isStreamingMode: boolean,
+			aiMessageId: number, // IDを引数で受け取る
 		) => {
 			// 既に生成中の場合は処理をスキップ
 			if (isGenerating.current) return;
@@ -283,8 +275,7 @@ export const useChatStreaming = ({
 			const controller = new AbortController();
 			abortRef.current = controller;
 
-			// 新しいAIメッセージIDを生成
-			const aiMessageId = createId();
+			// 新しいAIメッセージIDを設定
 			lastMessageId.current = aiMessageId;
 
 			// バッファを完全にクリアして前のメッセージとの混入を防ぐ
@@ -441,7 +432,6 @@ export const useChatStreaming = ({
 			}
 		},
 		[
-			createId,
 			addMessageWithId,
 			streamingTTS,
 			bufferedAddChunk,
