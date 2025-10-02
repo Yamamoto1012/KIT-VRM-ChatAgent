@@ -193,9 +193,9 @@ export const useChatStreaming = ({
 			}
 
 			// バッファから1文字取り出して表示テキストに追加
-			const char = streamBuffer.current.substring(0, 1);
-			streamBuffer.current = streamBuffer.current.substring(1);
-			currentDisplayText.current += char;
+			const firstChar = Array.from(streamBuffer.current)[0];
+			streamBuffer.current = streamBuffer.current.substring(firstChar.length);
+			currentDisplayText.current += firstChar;
 
 			// メッセージIDが有効で、コンテンツがある場合のみ更新
 			// これにより空のメッセージや無効なIDによる更新を防ぐ
@@ -315,12 +315,12 @@ export const useChatStreaming = ({
 						controller.signal,
 						(chunk) => {
 							if (chunk.type === "content" && chunk.content) {
-								// チャンクは増分コンテンツとして扱う
-								// 以前は累積テキストとの差分計算をしていたが、
-								// これが原因でメッセージ間での内容混入が発生していた
-								const incrementalText = chunk.content;
+								// 単純な連結処理
+								const incrementalText = chunk.content || "";
 
 								if (incrementalText) {
+									console.log("STREAM DEBUG:", { incrementalText });
+
 									// テキストを蓄積
 									accumulatedText += incrementalText;
 									streamBuffer.current += incrementalText;

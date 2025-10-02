@@ -90,16 +90,26 @@ export const ChatInterface = forwardRef<
 		const trimmed = input.trim();
 		if (!trimmed || chatStreaming.state.isGenerating) return;
 
-		pushMessage({ text: trimmed, isUser: true });
+		// ユーザーメッセージのオブジェクトを先に作成
+		const userMessage: ConversationMessage = {
+			role: "user",
+			content: trimmed,
+		};
 
-		// 会話履歴を準備（最新20件まで）
-		const conversationHistory: ConversationMessage[] = messages
-			.slice(-20)
-			.map((msg) => ({
-				role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
-				content: msg.text,
-			}))
-			.filter((msg) => msg.content.trim()); // 空のメッセージを除外
+		// Jotaiの状態に追加
+		pushMessage({ text: userMessage.content, isUser: true });
+
+		// 古い `messages` 配列に、新しいユーザーメッセージを追加して、最新の会話履歴を作成
+		const conversationHistory: ConversationMessage[] = [
+			...messages
+				.slice(-19) // 1つ減らす
+				.map((msg) => ({
+					role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
+					content: msg.text,
+				}))
+				.filter((msg) => msg.content.trim()),
+			userMessage, // ここで追加
+		];
 
 		await chatStreaming.generateResponse(
 			trimmed,
