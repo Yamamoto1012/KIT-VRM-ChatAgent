@@ -52,10 +52,10 @@ export interface ChatStreamingResult {
 		query: string,
 		conversationHistory: ConversationMessage[],
 		isStreamingMode: boolean,
+		aiMessageId: number, // AIメッセージIDを外部から受け取る
 	) => Promise<void>;
 	/** 現在の生成処理を停止する関数 */
-	stopGeneration: () => void;
-	/** テキストアニメーション表示関数 */
+	stopGeneration: () => void /** テキストアニメーション表示関数 */;
 	animateText: (speed?: number) => void;
 }
 
@@ -141,15 +141,6 @@ export const useChatStreaming = ({
 	});
 
 	// ===== ユーティリティ関数 =====
-	/**
-	 * 一意のメッセージIDを生成
-	 * タイムスタンプとカウンターを組み合わせて重複を防ぐ
-	 */
-	const messageIdCounter = useRef(0);
-	const createId = useCallback(() => {
-		messageIdCounter.current += 1;
-		return Date.now() * 1000 + messageIdCounter.current;
-	}, []);
 
 	/**
 	 * バッファリング機能付きチャンク送信関数
@@ -193,9 +184,9 @@ export const useChatStreaming = ({
 			}
 
 			// バッファから1文字取り出して表示テキストに追加
-			const char = streamBuffer.current.substring(0, 1);
-			streamBuffer.current = streamBuffer.current.substring(1);
-			currentDisplayText.current += char;
+			const firstChar = Array.from(streamBuffer.current)[0];
+			streamBuffer.current = streamBuffer.current.substring(firstChar.length);
+			currentDisplayText.current += firstChar;
 
 			// メッセージIDが有効で、コンテンツがある場合のみ更新
 			// これにより空のメッセージや無効なIDによる更新を防ぐ
@@ -264,6 +255,7 @@ export const useChatStreaming = ({
 			query: string,
 			conversationHistory: ConversationMessage[],
 			isStreamingMode: boolean,
+			aiMessageId: number, // IDを引数で受け取る
 		) => {
 			// 既に生成中の場合は処理をスキップ
 			if (isGenerating.current) return;
@@ -283,8 +275,7 @@ export const useChatStreaming = ({
 			const controller = new AbortController();
 			abortRef.current = controller;
 
-			// 新しいAIメッセージIDを生成
-			const aiMessageId = createId();
+			// 新しいAIメッセージIDを設定
 			lastMessageId.current = aiMessageId;
 
 			// バッファを完全にクリアして前のメッセージとの混入を防ぐ
@@ -315,12 +306,12 @@ export const useChatStreaming = ({
 						controller.signal,
 						(chunk) => {
 							if (chunk.type === "content" && chunk.content) {
-								// チャンクは増分コンテンツとして扱う
-								// 以前は累積テキストとの差分計算をしていたが、
-								// これが原因でメッセージ間での内容混入が発生していた
-								const incrementalText = chunk.content;
+								// 単純な連結処理
+								const incrementalText = chunk.content || "";
 
 								if (incrementalText) {
+									console.log("STREAM DEBUG:", { incrementalText });
+
 									// テキストを蓄積
 									accumulatedText += incrementalText;
 									streamBuffer.current += incrementalText;
@@ -441,7 +432,6 @@ export const useChatStreaming = ({
 			}
 		},
 		[
-			createId,
 			addMessageWithId,
 			streamingTTS,
 			bufferedAddChunk,
