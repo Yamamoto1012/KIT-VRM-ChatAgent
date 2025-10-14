@@ -4,7 +4,7 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"dev": "vite --host",
 		"build": "tsc -b && vite build",
 		"lint": "eslint .",
 		"preview": "vite preview",
@@ -19,6 +19,7 @@
 		"prepare": "lefthook install"
 	},
 	"dependencies": {
+		"@mediapipe/tasks-vision": "0.10.22-rc.20250304",
 		"@pixiv/three-vrm": "^3.3.6",
 		"@pixiv/three-vrm-animation": "^3.3.6",
 		"@radix-ui/react-avatar": "^1.1.3",
