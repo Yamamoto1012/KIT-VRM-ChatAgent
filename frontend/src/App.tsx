@@ -10,6 +10,7 @@ import {
 import type { ChatInterfaceHandle } from "./features/ChatInterface/ChatInterface";
 import { ControlButtons } from "./features/ControlButtons/ControlButtons";
 import { MediaPipeDetection } from "./features/MediaPipe/MediaPipeDetection";
+import { MotionViewer, MotionViewerToggle } from "./features/MotionViewer";
 import { ScreenManager } from "./features/ScreenManager/ScreenManager";
 import { VRMContainer } from "./features/VRM/VRMContainer/VRMContainer";
 import { useAudioContext } from "./features/VRM/hooks/useAudioContext";
@@ -137,6 +138,10 @@ export default function App() {
 			{/* 感情分析デバッグ機能 */}
 			<SentimentDebugToggle />
 			<SentimentDebugView />
+
+			{/* モーションビューワーデバッグ機能 */}
+			<MotionViewerToggle />
+			<MotionViewer vrmWrapperRef={vrmWrapperRef} />
 		</AppLayout>
 	);
 }
