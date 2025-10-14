@@ -9,6 +9,7 @@ import {
 } from "./components/debug/SentimentDebugView";
 import type { ChatInterfaceHandle } from "./features/ChatInterface/ChatInterface";
 import { ControlButtons } from "./features/ControlButtons/ControlButtons";
+import { MediaPipeDetection } from "./features/MediaPipe/MediaPipeDetection";
 import { ScreenManager } from "./features/ScreenManager/ScreenManager";
 import { VRMContainer } from "./features/VRM/VRMContainer/VRMContainer";
 import { useAudioContext } from "./features/VRM/hooks/useAudioContext";
@@ -16,6 +17,8 @@ import { VoiceChatDialog } from "./features/VoiceChat/VoiceChatDialog";
 import { useCategorySelection } from "./hooks/useCategorySelection";
 import {
 	isControlMenuOpenAtom,
+	isMediaPipeEnabledAtom,
+	showMediaPipeDetectionAtom,
 	showVoiceChatAtom,
 } from "./store/appStateAtoms";
 import { currentLanguageAtom } from "./store/languageAtoms";
@@ -29,6 +32,8 @@ export default function App() {
 	const [isControlMenuOpen] = useAtom(isControlMenuOpenAtom);
 	const [showBottomNavigation] = useAtom(showBottomNavigationAtom);
 	const [currentLanguage] = useAtom(currentLanguageAtom);
+	const [showMediaPipeDetection] = useAtom(showMediaPipeDetectionAtom);
+	const [isMediaPipeEnabled] = useAtom(isMediaPipeEnabledAtom);
 	const { i18n } = useTranslation();
 
 	// アプリ起動時に保存された言語設定とi18nextを同期
@@ -98,6 +103,31 @@ export default function App() {
 
 					{/* コントロールボタン群*/}
 					{!showBottomNavigation && <ControlButtons />}
+
+					{/* MediaPipe検出機能UI */}
+					{showMediaPipeDetection && isMediaPipeEnabled && (
+						<div className="fixed bottom-24 right-4 z-50 max-w-md">
+							<MediaPipeDetection
+								expressionManager={vrmWrapperRef.current?.getExpressionManager?.()}
+								autoStart={isMediaPipeEnabled}
+								showUI={showMediaPipeDetection}
+								enableVRMReaction={true}
+								// onUserPresent={() => {
+								// 	console.log("ユーザーが検出されました");
+								// }}
+								// onUserLeft={() => {
+								// 	console.log("ユーザーが離れました");
+								// }}
+								// onError={(error) => {
+								// 	console.error("MediaPipe エラー:", error);
+								// }}
+								onPlayAnimation={(animationUrl: string) => {
+									// console.log(`Playing animation: ${animationUrl}`);
+									vrmWrapperRef.current?.crossFadeAnimation(animationUrl);
+								}}
+							/>
+						</div>
+					)}
 				</>
 			)}
 
