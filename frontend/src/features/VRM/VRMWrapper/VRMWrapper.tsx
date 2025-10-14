@@ -11,6 +11,7 @@ import type { AudioStreamingState } from "../../../store/chatAtoms";
 import { selectedModelConfigAtom } from "../../../store/modelAtoms";
 import { sentimentDebugAtom } from "../../../store/sentimentDebugStore";
 import type { SentimentCategory } from "../../../types/sentiment";
+import type { ExpressionManager } from "../VRMExpression/ExpressionManager";
 import { VRMRender } from "../VRMRender/VRMRender";
 
 export type VRMWrapperHandle = {
@@ -24,6 +25,7 @@ export type VRMWrapperHandle = {
 	isThinking: boolean; // 現在の思考状態
 	getLastMotion: () => string; // 現在のモーション名取得
 	restoreLastMotion: () => void; // 直前のモーションに戻す
+	getExpressionManager?: () => ExpressionManager | null | undefined; // ExpressionManagerインスタンスを取得
 };
 
 type VRMWrapperProps = {
@@ -35,11 +37,11 @@ type VRMWrapperProps = {
 
 /**
  * カテゴリ深度に応じたVRMモデルの位置を計算する関数
- * @param _depth - カテゴリの深度
+ * 現在は深度に関わらず固定位置を返す
  * @return - VRMモデルの位置座標
  */
 
-const getPositionForDepth = (_depth: number): [number, number, number] => {
+const getPositionForDepth = (): [number, number, number] => {
 	const basePosition: [number, number, number] = [0, -1, 0];
 	// 位置は固定にして、カテゴリ深度による変更を無効化
 	return basePosition;
@@ -78,6 +80,7 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 			setExpression?: (preset: string, weight: number) => void;
 			setExpressionForMotion?: (motionName: string) => void;
 			setExpressionBySentiment?: (category: SentimentCategory) => void;
+			getExpressionManager?: () => ExpressionManager | null | undefined;
 		} | null>(null);
 
 		// 直前のモーション名を保持
@@ -264,6 +267,9 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 			restoreLastMotion: () => {
 				crossFadeToMotion(lastMotionRef.current);
 			},
+			getExpressionManager: () => {
+				return vrmRenderRef.current?.getExpressionManager?.();
+			},
 		}));
 
 		// カテゴリ深度変更時の処理（モーション変更は無効化）
@@ -292,7 +298,7 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 		const vrmOptions = {
 			vrmUrl: modelConfig.vrmUrl,
 			vrmaUrl: modelConfig.defaultMotion || "/Motion/StandingIdle.vrma",
-			position: getPositionForDepth(categoryDepth),
+			position: getPositionForDepth(),
 			rotation: getRotationForDepth(),
 			lookAtCamera: true,
 			ref: vrmRenderRef,
