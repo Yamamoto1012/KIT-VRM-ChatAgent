@@ -9,6 +9,16 @@ import {
 	privacySettingsAtom,
 } from "../store/detectionAtoms";
 
+vi.mock("../services/MediaPipeService", () => ({
+	MediaPipeService: {
+		getInstance: vi.fn(() => ({
+			initializeFaceDetection: vi.fn().mockResolvedValue(undefined),
+			processFaceDetection: vi.fn().mockResolvedValue([]),
+			cleanup: vi.fn(),
+		})),
+	},
+}));
+
 // Test wrapper with Jotai Provider
 const createWrapper = (store: ReturnType<typeof createStore>) => {
 	return ({ children }: { children: ReactNode }) => (
