@@ -73,6 +73,7 @@ export const VRMRender = forwardRef(
 			setExpressionBySentiment: expressions.setExpressionBySentiment,
 			playAudio: expressions.playAudio,
 			isAudioInitialized: expressions.isAudioInitialized,
+			getExpressionManager: () => expressions.expressionManager,
 		}));
 
 		// 初期モーション読み込み時に表情も設定
