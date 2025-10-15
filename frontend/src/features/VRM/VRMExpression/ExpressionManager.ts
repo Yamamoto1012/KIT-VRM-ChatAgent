@@ -39,6 +39,7 @@ export class ExpressionManager {
 	private currentSentiment: SentimentCategory | null = null;
 	private lastMicroExpressionTime = 0;
 	private availableExpressions: string[] = [];
+	private isThinking = false; // 思考中フラグ
 
 	constructor(vrm: VRM | null = null) {
 		this.vrm = vrm;
@@ -916,5 +917,91 @@ export class ExpressionManager {
 			isMediaPipeActive: Date.now() - this.lastMicroExpressionTime < 10000,
 			currentState: "MediaPipe統合機能有効",
 		};
+	}
+
+	/**
+	 * 思考中フラグを設定
+	 * @param isThinking 思考中かどうか
+	 */
+	setThinking(isThinking: boolean): void {
+		this.isThinking = isThinking;
+	}
+
+	/**
+	 * 思考中フラグを取得
+	 */
+	getThinking(): boolean {
+		return this.isThinking;
+	}
+
+	/**
+	 * マイクロ表情をトリガーする（短時間の表情変化）
+	 * 現在の感情表情をベースに、微弱な表情変化を重ねる
+	 * @param preset 表情プリセット
+	 * @param weight 表情の重み（0-1）
+	 * @param duration 持続時間（ミリ秒）
+	 */
+	triggerMicroExpression(
+		preset: ExpressionPreset,
+		weight: number,
+		duration: number,
+	): void {
+		if (!this.vrm) return;
+
+		// 思考中はマイクロ表情を抑制
+		if (this.isThinking) {
+			return;
+		}
+
+		// リップシンク中やセンチメント表情が設定されている場合は控えめに
+		let adjustedWeight = weight;
+
+		// リップシンク中は50%減
+		if (this.isLipSyncActive) {
+			adjustedWeight *= 0.5;
+		}
+
+		// 現在の感情表情がある場合は、さらに控えめに（30%）
+		// 感情表情の上に微弱な変化として重ねる
+		if (this.currentSentiment && this.currentSentiment !== "neutral") {
+			adjustedWeight *= 0.3;
+		}
+
+		// 現在の基本表情（感情表情）の重みを保持
+		const baseExpression = this.currentExpression;
+		const baseWeight = this.currentWeight;
+
+		// マイクロ表情を現在の表情に重ねる
+		// 同じ表情の場合は加算、異なる場合は微弱に混合
+		if (preset === baseExpression) {
+			// 同じ表情なら重みを加算（最大1.0まで）
+			const combinedWeight = Math.min(baseWeight + adjustedWeight, 1.0);
+			this.setExpression(preset, combinedWeight);
+		} else {
+			// 異なる表情の場合は、ベース表情を維持しつつ微弱にブレンド
+			// ベース表情: 70-80%、マイクロ表情: 20-30%
+			const blendRatio = 0.25; // マイクロ表情の影響度
+
+			// ベース表情を少し弱めて設定
+			this.setExpression(baseExpression, baseWeight * (1 - blendRatio));
+
+			// マイクロ表情を弱めて重ねる
+			safeSetExpression(this.vrm, preset, adjustedWeight * blendRatio, true);
+		}
+
+		// 指定時間後にベース表情に戻す
+		setTimeout(() => {
+			// リップシンク中でなく、感情表情が変わっていなければ元に戻す
+			if (!this.isLipSyncActive && this.currentExpression === baseExpression) {
+				this.setExpression(baseExpression, baseWeight);
+			}
+		}, duration);
+
+		// デバッグログ
+		if (EXPRESSION_LOG_CONFIG.enableDebugLogs) {
+			console.log(
+				`🎭 マイクロ表情トリガー: ${preset} (${adjustedWeight}) over ${baseExpression} (${baseWeight}) - ${duration}ms`,
+			);
+		}
 	}
 }

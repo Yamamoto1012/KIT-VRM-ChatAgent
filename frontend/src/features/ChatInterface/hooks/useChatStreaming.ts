@@ -20,6 +20,10 @@ import {
 } from "../../../services/llmService";
 
 import type { VRMWrapperHandle } from "../../VRM/VRMWrapper/VRMWrapper";
+import {
+	analyzeTextForMicroExpression,
+	deduplicateTriggers,
+} from "../../VRM/utils/expression/textExpressionAnalyzer";
 
 /**
  * ChatStreamingフック用のオプション型定義
@@ -96,6 +100,8 @@ export const useChatStreaming = ({
 	const currentDisplayText = useRef("");
 	/** API呼び出し中断用のコントローラー */
 	const abortRef = useRef<AbortController | null>(null);
+	/** テキスト表情解析の最終位置 */
+	const lastExpressionAnalysisIndexRef = useRef(0);
 
 	// ===== バッファリング機能用の状態 =====
 	/** TTSストリーミング用チャンクバッファ */
@@ -141,6 +147,56 @@ export const useChatStreaming = ({
 	});
 
 	// ===== ユーティリティ関数 =====
+
+	/**
+	 * テキストからマイクロ表情をトリガーする
+	 * @param text 解析対象のテキスト
+	 */
+	const triggerExpressionsFromText = useCallback(
+		(text: string) => {
+			if (!vrmWrapperRef?.current?.triggerMicroExpression) {
+				return;
+			}
+
+			// 思考中（Thinkingモーション中）は表情トリガーを抑制
+			if (vrmWrapperRef.current.isThinking) {
+				return;
+			}
+
+			// 新しいテキストの表情トリガーを検出
+			const triggers = analyzeTextForMicroExpression(
+				text,
+				lastExpressionAnalysisIndexRef.current,
+			);
+
+			// 重複を排除
+			const uniqueTriggers = deduplicateTriggers(triggers);
+
+			// 各トリガーを実行
+			for (const trigger of uniqueTriggers) {
+				// 遅延実行でテキストの位置に合わせたタイミングで表情を変更
+				const delay = Math.max(
+					0,
+					(trigger.position - lastExpressionAnalysisIndexRef.current) * 30,
+				);
+
+				setTimeout(() => {
+					// 遅延実行時にも再度思考状態をチェック
+					if (!vrmWrapperRef.current?.isThinking) {
+						vrmWrapperRef.current?.triggerMicroExpression?.(
+							trigger.type,
+							trigger.weight,
+							trigger.duration,
+						);
+					}
+				}, delay);
+			}
+
+			// 解析位置を更新
+			lastExpressionAnalysisIndexRef.current = text.length;
+		},
+		[vrmWrapperRef],
+	);
 
 	/**
 	 * バッファリング機能付きチャンク送信関数
@@ -227,6 +283,8 @@ export const useChatStreaming = ({
 		streamBuffer.current = "";
 		currentDisplayText.current = "";
 		isAnimating.current = false;
+		// 表情解析位置をリセット
+		lastExpressionAnalysisIndexRef.current = 0;
 	}, []);
 
 	/**
@@ -324,6 +382,9 @@ export const useChatStreaming = ({
 
 									// TTSストリーミング用にチャンクをバッファリング
 									bufferedAddChunk(incrementalText);
+
+									// テキストベースの表情トリガーを実行
+									triggerExpressionsFromText(accumulatedText);
 								}
 							} else if (chunk.type === "done") {
 								// ストリーミング完了時の処理
@@ -393,6 +454,9 @@ export const useChatStreaming = ({
 					// センチメント分析を実行
 					analyzeSentiment(response);
 
+					// テキストベースの表情トリガーを実行
+					triggerExpressionsFromText(response);
+
 					// アニメーション完了を待ってからローディング状態を解除
 					const waitForAnimation = () => {
 						if (isAnimating.current || streamBuffer.current.length > 0) {
@@ -444,6 +508,7 @@ export const useChatStreaming = ({
 			stopAllAudio,
 			clearBuffers,
 			streamingTTSState,
+			triggerExpressionsFromText,
 		],
 	);
 

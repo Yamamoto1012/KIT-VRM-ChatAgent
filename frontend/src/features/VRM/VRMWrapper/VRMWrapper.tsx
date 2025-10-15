@@ -20,6 +20,11 @@ export type VRMWrapperHandle = {
 	setExpression?: (preset: string, weight: number) => void; // 表情設定
 	setExpressionForMotion?: (motionName: string) => void; // モーションに応じた表情設定
 	setExpressionBySentiment?: (category: SentimentCategory) => void; // 感情による表情設定
+	triggerMicroExpression?: (
+		preset: string,
+		weight: number,
+		duration: number,
+	) => void; // マイクロ表情トリガー
 	startThinking: () => void; // 思考モード開始
 	stopThinking: () => void; // 思考モード終了
 	isThinking: boolean; // 現在の思考状態
@@ -80,6 +85,11 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 			setExpression?: (preset: string, weight: number) => void;
 			setExpressionForMotion?: (motionName: string) => void;
 			setExpressionBySentiment?: (category: SentimentCategory) => void;
+			triggerMicroExpression?: (
+				preset: string,
+				weight: number,
+				duration: number,
+			) => void;
 			getExpressionManager?: () => ExpressionManager | null | undefined;
 		} | null>(null);
 
@@ -245,6 +255,15 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 					getExpressionForSentiment(category);
 				smoothSetExpression(preset, weight, duration);
 			},
+			triggerMicroExpression: (
+				preset: string,
+				weight: number,
+				duration: number,
+			) => {
+				if (vrmRenderRef.current?.triggerMicroExpression) {
+					vrmRenderRef.current.triggerMicroExpression(preset, weight, duration);
+				}
+			},
 			startThinking: () => {
 				setIsThinking(true);
 				setIsPaused(false);
@@ -254,6 +273,12 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 				if (vrmRenderRef.current?.setExpression) {
 					vrmRenderRef.current.setExpression("neutral", 0.5);
 				}
+				// ExpressionManagerに思考中であることを通知
+				const expressionManager =
+					vrmRenderRef.current?.getExpressionManager?.();
+				if (expressionManager) {
+					expressionManager.setThinking(true);
+				}
 			},
 			stopThinking: () => {
 				setIsThinking(false);
@@ -261,6 +286,12 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 				const defaultMotion = "/Motion/StandingIdle.vrma";
 				crossFadeToMotion(defaultMotion);
 				lastMotionRef.current = defaultMotion;
+				// ExpressionManagerに思考終了を通知
+				const expressionManager =
+					vrmRenderRef.current?.getExpressionManager?.();
+				if (expressionManager) {
+					expressionManager.setThinking(false);
+				}
 			},
 			isThinking,
 			getLastMotion: () => lastMotionRef.current,
