@@ -370,6 +370,11 @@ export const useChatStreaming = ({
 								if (incrementalText) {
 									console.log("STREAM DEBUG:", { incrementalText });
 
+									// 最初のコンテンツが届いた時点で思考中UIを削除
+									if (isLoading.current) {
+										isLoading.current = false;
+									}
+
 									// テキストを蓄積
 									accumulatedText += incrementalText;
 									streamBuffer.current += incrementalText;
@@ -403,7 +408,7 @@ export const useChatStreaming = ({
 										id: aiMessageId,
 										updates: { isStreaming: false },
 									});
-									isLoading.current = false;
+									// isLoading.current は既に false に設定済み
 									isGenerating.current = false;
 								};
 								waitForAnimation();
@@ -437,6 +442,9 @@ export const useChatStreaming = ({
 						currentLanguage,
 					);
 
+					// レスポンス取得時点で思考中UIを削除
+					isLoading.current = false;
+
 					// レスポンスを文字単位でアニメーション表示
 					// バッファをクリアしてから新しいレスポンスを設定
 					streamBuffer.current = response;
@@ -467,7 +475,6 @@ export const useChatStreaming = ({
 							id: aiMessageId,
 							updates: { isStreaming: false },
 						});
-						isLoading.current = false;
 						isGenerating.current = false;
 					};
 					waitForAnimation();
