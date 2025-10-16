@@ -55,7 +55,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 		name: "AI沢みのり",
 		description: "AI沢みのり",
 		vrmUrl: "/Model/KIT_2.0.vrm",
-		thumbnailUrl: "/thumbnails/kit2.png",
+		thumbnailUrl: "/thumbnails/AIzawa.png",
 		speakerId: 888753760,
 		defaultMotion: "/Motion/StandingIdle.vrma",
 		modelRotation: [0, 0, 0],
