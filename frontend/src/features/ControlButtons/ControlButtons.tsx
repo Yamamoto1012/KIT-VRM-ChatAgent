@@ -1,8 +1,9 @@
 import {
 	isControlMenuOpenAtom,
+	isMediaPipeEnabledAtom,
 	isMutedAtom,
 	isStreamingModeAtom,
-	showInfoAtom,
+	showMediaPipeDetectionAtom,
 	showVoiceChatAtom,
 } from "@/store/appStateAtoms";
 import { showBackgroundSelectorAtom } from "@/store/backgroundAtoms";
@@ -12,6 +13,7 @@ import { useAtom, useSetAtom } from "jotai";
 import type { FC } from "react";
 import { BackgroundSelectorDialog } from "../BackgroundSelector/BackgroundSelectorDialog";
 import { LanguageSelector } from "../LanguageSelector/LanguageSelector";
+import { updatePrivacySettingsAtom } from "../MediaPipe/store/detectionAtoms";
 import { ModelSelectorDialog } from "../ModelSelector/ModelSelectorDialog";
 import { ControlButtonsView } from "./ControlButtonsView";
 
@@ -22,9 +24,13 @@ import { ControlButtonsView } from "./ControlButtonsView";
  */
 export const ControlButtons: FC = () => {
 	// グローバル状態の管理
-	const [showInfo, setShowInfo] = useAtom(showInfoAtom);
 	const [isMuted, setIsMuted] = useAtom(isMutedAtom);
 	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
+	const [isMediaPipeEnabled, setIsMediaPipeEnabled] = useAtom(
+		isMediaPipeEnabledAtom,
+	);
+	const [, setShowMediaPipeDetection] = useAtom(showMediaPipeDetectionAtom);
+	const [, updatePrivacySettings] = useAtom(updatePrivacySettingsAtom);
 	const [, setIsControlMenuOpen] = useAtom(isControlMenuOpenAtom);
 	const [, setShowVoiceChat] = useAtom(showVoiceChatAtom);
 	const [, setLanguageSelectorOpen] = useAtom(languageSelectorOpenAtom);
@@ -47,19 +53,9 @@ export const ControlButtons: FC = () => {
 	const handleOpenBackgroundSelector = () => setShowBackgroundSelector(true);
 
 	/**
-	 * 情報パネルの表示状態を切り替える
-	 */
-	const handleToggleInfo = () => setShowInfo(!showInfo);
-
-	/**
 	 * 音声のミュート状態を切り替える
 	 */
 	const handleToggleMute = () => setIsMuted(!isMuted);
-
-	/**
-	 * 情報パネルを閉じる
-	 */
-	const handleCloseInfo = () => setShowInfo(false);
 
 	/**
 	 * 音声チャットを開く
@@ -72,6 +68,18 @@ export const ControlButtons: FC = () => {
 	const handleToggleStreamingMode = () => setIsStreamingMode(!isStreamingMode);
 
 	/**
+	 * MediaPipe検出機能を切り替える
+	 */
+	const handleToggleMediaPipe = () => {
+		const newState = !isMediaPipeEnabled;
+		setIsMediaPipeEnabled(newState);
+		setShowMediaPipeDetection(newState);
+
+		// カメラアクセスも同時に有効/無効にする
+		updatePrivacySettings({ cameraEnabled: newState });
+	};
+
+	/**
 	 * メニューの開閉状態を処理する
 	 */
 	const handleMenuOpenChange = (isOpen: boolean) => {
@@ -81,17 +89,16 @@ export const ControlButtons: FC = () => {
 	return (
 		<>
 			<ControlButtonsView
-				showInfo={showInfo}
 				isMuted={isMuted}
 				isStreamingMode={isStreamingMode}
+				isMediaPipeEnabled={isMediaPipeEnabled}
 				onOpenLanguageSelector={handleOpenLanguageSelector}
 				onOpenModelSelector={handleOpenModelSelector}
 				onOpenBackgroundSelector={handleOpenBackgroundSelector}
-				onToggleInfo={handleToggleInfo}
 				onToggleMute={handleToggleMute}
 				onOpenVoiceChat={handleOpenVoiceChat}
-				onCloseInfo={handleCloseInfo}
 				onToggleStreamingMode={handleToggleStreamingMode}
+				onToggleMediaPipe={handleToggleMediaPipe}
 				onMenuOpenChange={handleMenuOpenChange}
 			/>
 			{/* 言語選択ダイアログ */}

@@ -27,9 +27,6 @@ export type ScreenManagerProps = {
 
 	// VRM関連
 	vrmWrapperRef: RefObject<VRMWrapperHandle | null>;
-
-	// InfoPanel関連
-	onCloseInfo: () => void;
 };
 
 /**

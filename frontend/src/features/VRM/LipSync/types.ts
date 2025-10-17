@@ -4,4 +4,5 @@ export type LipSyncAnalyzeResult = {
 	frequencyData?: Float32Array;
 	phoneme?: string;
 	confidence?: number;
+	frequency?: number; // 推定ピッチ（Hz）
 };

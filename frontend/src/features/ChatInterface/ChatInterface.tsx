@@ -1,5 +1,6 @@
 import { ChatInterfaceView } from "./ChatInterfaceView";
 import { ChatMobileView } from "./ChatMobileView";
+import { useChatStreaming } from "./hooks/useChatStreaming";
 
 import { useAtom, useSetAtom } from "jotai";
 import type { ChangeEvent, KeyboardEvent } from "react";
@@ -11,33 +12,21 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { useTranslation } from "react-i18next";
 
 import { isStreamingModeAtom } from "../../store/appStateAtoms";
 import {
 	addMessageAtom,
-	addMessageWithIdAtom,
 	messagesAtom,
 	resetChatAtom,
-	updateMessageAtom,
 } from "../../store/chatAtoms";
-import { currentLanguageAtom } from "../../store/languageAtoms";
 import {
 	isRecordingAtom,
 	toggleRecordingAtom,
 } from "../../store/recordingAtoms";
 
 import { useResponsive } from "../../hooks/useResponsive";
-import { useSentiment } from "../../hooks/useSentiment";
-import { useStreamingTTS } from "../../hooks/useStreamingTTS";
-import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 
-import {
-	type ConversationMessage,
-	buildPrompt,
-	generateTextNonStreaming,
-	generateTextStream,
-} from "../../services/llmService";
+import type { ConversationMessage } from "../../services/llmService";
 
 import type { VRMWrapperHandle } from "../VRM/VRMWrapper/VRMWrapper";
 
@@ -55,97 +44,20 @@ export const ChatInterface = forwardRef<
 	React.PropsWithChildren<ChatInterfaceProps>
 >((props, ref) => {
 	const { isMobile } = useResponsive();
-	const [messages, setMessages] = useAtom(messagesAtom);
-	const [currentLanguage] = useAtom(currentLanguageAtom);
+	const [messages] = useAtom(messagesAtom);
 	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
 	const [input, setInput] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
 	const [isRecording] = useAtom(isRecordingAtom);
 	const toggleRecording = useSetAtom(toggleRecordingAtom);
 	const addMessage = useSetAtom(addMessageAtom);
-	const addMessageWithId = useSetAtom(addMessageWithIdAtom);
-	const updateMessage = useSetAtom(updateMessageAtom);
 	const resetChat = useSetAtom(resetChatAtom);
-	const { t } = useTranslation("chat");
-
-	const streamBuffer = useRef("");
-	const isAnimating = useRef(false);
-	const lastMessageId = useRef<number | null>(null);
-	const currentDisplayText = useRef("");
-
-	// バッファリング機能用のref
-	const chunkBufferRef = useRef<string>("");
-	const bufferTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-	const { state: streamingTTSState, ...streamingTTS } = useStreamingTTS({
-		vrmWrapperRef: props.vrmWrapperRef,
-	});
-
-	const { speak, stop: stopLegacyTTS } = useTextToSpeech({
-		vrmWrapperRef: props.vrmWrapperRef,
-	});
-
-	const { analyzeSentiment } = useSentiment({
-		enabled: true,
-		enableDebugLogging: true,
-	});
-
-	/**
-	 * バッファリング機能付きaddChunk関数
-	 * 連続したチャンクをバッファし、50ms後にバッチ送信する
-	 */
-	const bufferedAddChunk = useCallback(
-		(chunk: string) => {
-			chunkBufferRef.current += chunk;
-
-			// 既存のタイマーをクリア
-			if (bufferTimerRef.current) {
-				clearTimeout(bufferTimerRef.current);
-			}
-
-			// 50ms後にバッファの内容を送信
-			bufferTimerRef.current = setTimeout(() => {
-				if (chunkBufferRef.current) {
-					streamingTTS.addChunk(chunkBufferRef.current);
-					chunkBufferRef.current = "";
-				}
-			}, 50);
-		},
-		[streamingTTS.addChunk],
-	);
 
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const abortRef = useRef<AbortController | null>(null);
-	const isGeneratingRef = useRef(false);
 
-	const animateText = useCallback(
-		(speed = 30) => {
-			if (!isAnimating.current || streamBuffer.current.length === 0) {
-				isAnimating.current = false;
-				return;
-			}
-
-			const char = streamBuffer.current.substring(0, 1);
-			streamBuffer.current = streamBuffer.current.substring(1);
-			currentDisplayText.current += char;
-
-			setMessages((prev) =>
-				prev.map((msg) =>
-					msg.id === lastMessageId.current
-						? { ...msg, text: currentDisplayText.current }
-						: msg,
-				),
-			);
-
-			setTimeout(() => requestAnimationFrame(() => animateText(speed)), speed);
-		},
-		[setMessages],
-	);
-
-	const stopAllAudio = useCallback(() => {
-		stopLegacyTTS();
-		streamingTTS.stopStreaming();
-	}, [stopLegacyTTS, streamingTTS.stopStreaming]);
+	// ストリーミング機能をカスタムフックに委譲
+	const chatStreaming = useChatStreaming({
+		vrmWrapperRef: props.vrmWrapperRef,
+	});
 
 	const messageIdCounter = useRef(0);
 	const createId = useCallback(() => {
@@ -154,46 +66,21 @@ export const ChatInterface = forwardRef<
 	}, []);
 
 	const pushMessage = useCallback(
-		(msg: { text: string; isUser: boolean }) => {
-			const enriched = { ...msg, id: createId() };
-			addMessage(enriched);
-			if (!enriched.isUser) {
-				analyzeSentiment(enriched.text);
-			}
+		(msg: { text: string; isUser: boolean; id: number }) => {
+			addMessage(msg);
 		},
-		[addMessage, analyzeSentiment, createId],
+		[addMessage],
 	);
 
 	useImperativeHandle(ref, () => ({
-		sendMessage: (text: string) => pushMessage({ text, isUser: true }),
-		stopGeneration: () => {
-			abortRef.current?.abort();
-			stopAllAudio();
-			setIsLoading(false);
-			isAnimating.current = false;
-			streamBuffer.current = "";
-			currentDisplayText.current = "";
-			// バッファをクリア
-			if (bufferTimerRef.current) {
-				clearTimeout(bufferTimerRef.current);
-				bufferTimerRef.current = null;
-			}
-			chunkBufferRef.current = "";
-		},
+		sendMessage: (text: string) =>
+			pushMessage({ text, isUser: true, id: createId() }),
+		stopGeneration: chatStreaming.stopGeneration,
 	}));
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	});
-
-	// コンポーネントのクリーンアップ時にバッファタイマーをクリア
-	useEffect(() => {
-		return () => {
-			if (bufferTimerRef.current) {
-				clearTimeout(bufferTimerRef.current);
-			}
-		};
-	}, []);
 
 	const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
 		setInput(e.target.value);
@@ -201,169 +88,32 @@ export const ChatInterface = forwardRef<
 
 	const handleSend = async () => {
 		const trimmed = input.trim();
-		if (!trimmed || isGeneratingRef.current) return;
+		if (!trimmed || chatStreaming.state.isGenerating) return;
 
-		isGeneratingRef.current = true;
-		pushMessage({ text: trimmed, isUser: true });
-		abortRef.current?.abort();
-		const controller = new AbortController();
-		abortRef.current = controller;
-		setIsLoading(true);
-
+		const userMessageId = createId();
 		const aiMessageId = createId();
-		lastMessageId.current = aiMessageId;
-		currentDisplayText.current = "";
-		streamBuffer.current = "";
 
-		addMessageWithId({
-			id: aiMessageId,
-			text: "",
-			isUser: false,
-			isStreaming: isStreamingMode,
-		});
+		pushMessage({ text: trimmed, isUser: true, id: userMessageId });
 
-		streamingTTS.clearQueue();
+		// 会話履歴を準備（最新のユーザーメッセージも反映）
+		const conversationHistory: ConversationMessage[] = [
+			...messages
+				.slice(-19)
+				.map((msg) => ({
+					role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
+					content: msg.text,
+				}))
+				.filter((msg) => msg.content.trim()),
+			{ role: "user", content: trimmed },
+		];
 
-		// 会話履歴を準備（最新20件まで）
-		const conversationHistory: ConversationMessage[] = messages
-			.slice(-20)
-			.map((msg) => ({
-				role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
-				content: msg.text,
-			}))
-			.filter((msg) => msg.content.trim()); // 空のメッセージを除外
+		await chatStreaming.generateResponse(
+			trimmed,
+			conversationHistory,
+			isStreamingMode,
+			aiMessageId, // AIメッセージIDを渡す
+		);
 
-		try {
-			const payloadQuery = buildPrompt(trimmed);
-
-			if (isStreamingMode) {
-				// ストリーミングモード
-				let accumulatedText = "";
-
-				await generateTextStream(
-					payloadQuery,
-					conversationHistory,
-					controller.signal,
-					(chunk) => {
-						if (chunk.type === "content" && chunk.content) {
-							const newText = chunk.content;
-							const diff = newText.startsWith(accumulatedText)
-								? newText.substring(accumulatedText.length)
-								: newText;
-
-							if (diff) {
-								accumulatedText += diff;
-								streamBuffer.current += diff;
-								if (!isAnimating.current) {
-									isAnimating.current = true;
-									animateText(); // デフォルト速度（30ms）を使用
-								}
-								bufferedAddChunk(diff);
-							}
-						} else if (chunk.type === "done") {
-							streamingTTS.finalize();
-							analyzeSentiment(accumulatedText);
-
-							const waitForAnimation = () => {
-								if (isAnimating.current || streamBuffer.current.length > 0) {
-									setTimeout(waitForAnimation, 100);
-									return;
-								}
-								updateMessage({
-									id: aiMessageId,
-									updates: { isStreaming: false },
-								});
-								setIsLoading(false);
-								isGeneratingRef.current = false;
-							};
-							waitForAnimation();
-
-							// Fallback logic
-							setTimeout(() => {
-								const { isPlaying, isGenerating, queue } = streamingTTSState;
-								if (
-									!isPlaying &&
-									!isGenerating &&
-									queue.length === 0 &&
-									accumulatedText.trim()
-								) {
-									console.warn(
-										"Streaming TTS did not start. Using legacy TTS.",
-									);
-									speak(accumulatedText);
-								}
-							}, 2000);
-						}
-					},
-					"/api/llm/query",
-					currentLanguage,
-				);
-			} else {
-				// 非ストリーミングモード
-				const response = await generateTextNonStreaming(
-					payloadQuery,
-					conversationHistory,
-					controller.signal,
-					currentLanguage,
-				);
-
-				// レスポンスを文字単位でアニメーション表示
-				streamBuffer.current = response;
-				currentDisplayText.current = "";
-
-				if (!isAnimating.current) {
-					isAnimating.current = true;
-					animateText(20); // 非ストリーミングモードでは少し速めに表示
-				}
-
-				// 非ストリーミングモードでは通常のTTSを使用
-				speak(response);
-
-				// センチメント分析
-				analyzeSentiment(response);
-
-				// アニメーション完了を待ってからローディング状態を解除
-				const waitForAnimation = () => {
-					if (isAnimating.current || streamBuffer.current.length > 0) {
-						setTimeout(waitForAnimation, 100);
-						return;
-					}
-					updateMessage({
-						id: aiMessageId,
-						updates: { isStreaming: false },
-					});
-					setIsLoading(false);
-					isGeneratingRef.current = false;
-				};
-				waitForAnimation();
-			}
-		} catch (err) {
-			stopAllAudio();
-			isAnimating.current = false;
-			streamBuffer.current = "";
-			currentDisplayText.current = "";
-			setIsLoading(false);
-			isGeneratingRef.current = false;
-			// バッファをクリア
-			if (bufferTimerRef.current) {
-				clearTimeout(bufferTimerRef.current);
-				bufferTimerRef.current = null;
-			}
-			chunkBufferRef.current = "";
-
-			if (err instanceof Error && err.name === "AbortError") {
-				updateMessage({
-					id: aiMessageId,
-					updates: { text: t("generationStopped"), isStreaming: false },
-				});
-			} else {
-				console.error("Text generation error:", err);
-				updateMessage({
-					id: aiMessageId,
-					updates: { text: t("errorGeneratingResponse"), isStreaming: false },
-				});
-			}
-		}
 		setInput("");
 	};
 
@@ -380,9 +130,6 @@ export const ChatInterface = forwardRef<
 
 	const handleReset = () => {
 		resetChat();
-		streamBuffer.current = "";
-		currentDisplayText.current = "";
-		isAnimating.current = false;
 	};
 
 	const handleToggleRecording = () => {
@@ -400,7 +147,7 @@ export const ChatInterface = forwardRef<
 	const commonProps = {
 		messages,
 		inputValue: input,
-		isThinking: isLoading,
+		isThinking: chatStreaming.state.isLoading,
 		isRecording,
 		isStreamingMode,
 		onInputChange: handleInputChange,
@@ -414,7 +161,7 @@ export const ChatInterface = forwardRef<
 	const desktopProps = {
 		messages,
 		inputValue: input,
-		isThinking: isLoading,
+		isThinking: chatStreaming.state.isLoading,
 		isRecording,
 		onInputChange: handleInputChange,
 		onKeyDown: handleKeyDown,
@@ -422,20 +169,7 @@ export const ChatInterface = forwardRef<
 		onSelect: handleSelect,
 		onReset: handleReset,
 		onToggleRecording: handleToggleRecording,
-		onStop: () => {
-			abortRef.current?.abort();
-			stopAllAudio();
-			setIsLoading(false);
-			isAnimating.current = false;
-			streamBuffer.current = "";
-			currentDisplayText.current = "";
-			// バッファをクリア
-			if (bufferTimerRef.current) {
-				clearTimeout(bufferTimerRef.current);
-				bufferTimerRef.current = null;
-			}
-			chunkBufferRef.current = "";
-		},
+		onStop: chatStreaming.stopGeneration,
 		messagesEndRef,
 	};
 

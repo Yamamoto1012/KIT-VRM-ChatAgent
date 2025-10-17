@@ -39,6 +39,7 @@ export class ExpressionManager {
 	private currentSentiment: SentimentCategory | null = null;
 	private lastMicroExpressionTime = 0;
 	private availableExpressions: string[] = [];
+	private isThinking = false; // 思考中フラグ
 
 	constructor(vrm: VRM | null = null) {
 		this.vrm = vrm;
@@ -678,5 +679,329 @@ export class ExpressionManager {
 			currentSentiment: this.currentSentiment,
 			vrmAvailable: !!this.vrm,
 		};
+	}
+
+	/**
+	 * MediaPipe検出データに基づいてVRM表情を制御する統合メソッド
+	 * 顔、手、ポーズの検出結果から適切な表情を選択・適用
+	 */
+	setExpressionByMediaPipeData(detectionData: {
+		face?: {
+			isPresent: boolean;
+			confidence: number;
+			facePosition?: "left" | "center" | "right" | null;
+			isLookingAtCamera: boolean;
+		};
+		hand?: {
+			isPresent: boolean;
+			isRaised: boolean;
+			gesture?: { name: string; confidence: number };
+		};
+		pose?: {
+			isPresent: boolean;
+			posture: "standing" | "sitting" | "leaning" | "unknown";
+			bodyOrientation: "front" | "left" | "right" | "back" | "unknown";
+		};
+		userActivity?: {
+			level: number; // 0-100
+			isActivelyMoving: boolean;
+		};
+	}): boolean {
+		if (!this.vrm) return false;
+
+		// 検出データから表情を決定するロジック
+		let targetExpression: ExpressionPreset = "neutral";
+		let targetWeight: number = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT;
+
+		// 顔検出に基づく表情制御
+		if (detectionData.face?.isPresent) {
+			if (
+				detectionData.face.isLookingAtCamera &&
+				detectionData.face.confidence > 0.7
+			) {
+				// ユーザーがカメラを見ている場合 - 少し嬉しそうな表情
+				targetExpression = "happy";
+				targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT * 0.6;
+			} else if (detectionData.face.facePosition === "center") {
+				// 顔が中央にある場合 - ニュートラルな表情
+				targetExpression = "neutral";
+				targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT;
+			}
+		}
+
+		// 手のジェスチャーに基づく表情制御
+		if (detectionData.hand?.isPresent) {
+			if (detectionData.hand.isRaised) {
+				// 手が上がっている場合 - 驚いた表情
+				targetExpression = "surprised";
+				targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_NORMAL;
+			} else if (detectionData.hand.gesture?.name === "thumbsUp") {
+				// サムズアップジェスチャー - 嬉しい表情
+				targetExpression = "happy";
+				targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_STRONG;
+			} else if (detectionData.hand.gesture?.name === "peace") {
+				// ピースサイン - 少し嬉しい表情
+				targetExpression = "happy";
+				targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_NORMAL;
+			}
+		}
+
+		// 姿勢に基づく表情調整
+		if (detectionData.pose?.isPresent) {
+			if (
+				detectionData.pose.posture === "standing" &&
+				detectionData.pose.bodyOrientation === "front"
+			) {
+				// 正面に立っている場合 - アクティブな表情
+				targetWeight = Math.min(targetWeight * 1.2, 1.0);
+			} else if (detectionData.pose.posture === "sitting") {
+				// 座っている場合 - リラックスした表情
+				if (targetExpression === "neutral") {
+					targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT * 0.8;
+				}
+			}
+		}
+
+		// アクティビティレベルに基づく調整
+		if (detectionData.userActivity) {
+			const activityMultiplier =
+				0.5 + (detectionData.userActivity.level / 100) * 0.5;
+			targetWeight = Math.min(targetWeight * activityMultiplier, 1.0);
+
+			// 高いアクティビティレベルの場合、よりアクティブな表情に
+			if (
+				detectionData.userActivity.level > 80 &&
+				detectionData.userActivity.isActivelyMoving
+			) {
+				if (targetExpression === "neutral") {
+					targetExpression = "happy";
+					targetWeight = VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_NORMAL;
+				}
+			}
+		}
+
+		// MediaPipe由来の表情変更をマーク（ログ用）
+		if (EXPRESSION_LOG_CONFIG.enableDebugLogs) {
+			console.debug(
+				`💫 MediaPipe表情制御: ${targetExpression} (重み: ${targetWeight.toFixed(2)})`,
+			);
+		}
+
+		// 表情を適用
+		return this.setExpression(targetExpression, targetWeight);
+	}
+
+	/**
+	 * MediaPipe検出結果に基づくマイクロ表情制御
+	 * 短時間の自然な表情変化を生成
+	 */
+	applyMediaPipeMicroExpressions(detectionData: {
+		faceConfidence?: number;
+		eyeContact?: boolean;
+		handMovement?: boolean;
+		postureStability?: number;
+	}): void {
+		if (!this.vrm) return;
+
+		const now = Date.now();
+		const timeSinceLastMicro = now - this.lastMicroExpressionTime;
+
+		// 検出状況に基づいてマイクロ表情の頻度を調整
+		let microExpressionProbability = 0.1; // 基本確率10%
+
+		if (detectionData.eyeContact) {
+			microExpressionProbability += 0.2; // アイコンタクトで確率増加
+		}
+
+		if (detectionData.handMovement) {
+			microExpressionProbability += 0.15; // 手の動きで確率増加
+		}
+
+		if (detectionData.faceConfidence && detectionData.faceConfidence > 0.8) {
+			microExpressionProbability += 0.1; // 高い顔認識信頼度で確率増加
+		}
+
+		// マイクロ表情の適用判定
+		if (
+			timeSinceLastMicro > 1500 &&
+			Math.random() < microExpressionProbability
+		) {
+			const microExpressions = [
+				{ preset: "happy" as ExpressionPreset, weight: 0.3, duration: 800 },
+				{ preset: "surprised" as ExpressionPreset, weight: 0.2, duration: 600 },
+				{ preset: "neutral" as ExpressionPreset, weight: 0.4, duration: 1000 },
+			];
+
+			const selectedMicro =
+				microExpressions[Math.floor(Math.random() * microExpressions.length)];
+
+			// 一時的にマイクロ表情を適用
+			this.setExpression(selectedMicro.preset, selectedMicro.weight);
+			this.lastMicroExpressionTime = now;
+
+			// 指定時間後に元の表情に戻す
+			setTimeout(() => {
+				if (this.currentSentiment === null) {
+					this.setExpression(
+						"neutral",
+						VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT,
+					);
+				}
+			}, selectedMicro.duration);
+
+			if (EXPRESSION_LOG_CONFIG.enableDebugLogs) {
+				console.debug(
+					`✨ MediaPipeマイクロ表情: ${selectedMicro.preset} (${selectedMicro.duration}ms)`,
+				);
+			}
+		}
+	}
+
+	/**
+	 * MediaPipe検出状態に基づく待機時表情制御
+	 * ユーザーが検出されていない時の自然な表情変化
+	 */
+	handleMediaPipeIdleState(): void {
+		if (!this.vrm) return;
+
+		const now = Date.now();
+		const idleTime = now - this.lastMicroExpressionTime;
+
+		// 5秒以上ユーザーが検出されていない場合の待機表情
+		if (idleTime > 5000) {
+			const idleExpressions = [
+				{ preset: "neutral" as ExpressionPreset, weight: 0.6 },
+				{ preset: "happy" as ExpressionPreset, weight: 0.3 },
+				{ preset: "surprised" as ExpressionPreset, weight: 0.2 },
+			];
+
+			const randomExpression =
+				idleExpressions[Math.floor(Math.random() * idleExpressions.length)];
+			this.setExpression(randomExpression.preset, randomExpression.weight);
+			this.lastMicroExpressionTime = now;
+
+			if (EXPRESSION_LOG_CONFIG.enableDebugLogs) {
+				console.debug(`😴 MediaPipe待機表情: ${randomExpression.preset}`);
+			}
+		}
+	}
+
+	/**
+	 * MediaPipe統合機能のリセット
+	 * MediaPipe関連の表情制御状態をクリア
+	 */
+	resetMediaPipeIntegration(): void {
+		// MediaPipe由来の表情をニュートラルに戻す
+		if (this.currentSentiment === null) {
+			this.setExpression(
+				"neutral",
+				VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT,
+			);
+		}
+
+		// マイクロ表情タイマーをリセット
+		this.lastMicroExpressionTime = 0;
+
+		if (EXPRESSION_LOG_CONFIG.enableDebugLogs) {
+			console.debug("🔄 MediaPipe表情統合リセット完了");
+		}
+	}
+
+	/**
+	 * MediaPipe統合のデバッグ情報取得
+	 */
+	getMediaPipeIntegrationDebugInfo() {
+		return {
+			...this.getAcousticLipSyncDebugInfo(),
+			lastMicroExpressionTime: this.lastMicroExpressionTime,
+			isMediaPipeActive: Date.now() - this.lastMicroExpressionTime < 10000,
+			currentState: "MediaPipe統合機能有効",
+		};
+	}
+
+	/**
+	 * 思考中フラグを設定
+	 * @param isThinking 思考中かどうか
+	 */
+	setThinking(isThinking: boolean): void {
+		this.isThinking = isThinking;
+	}
+
+	/**
+	 * 思考中フラグを取得
+	 */
+	getThinking(): boolean {
+		return this.isThinking;
+	}
+
+	/**
+	 * マイクロ表情をトリガーする（短時間の表情変化）
+	 * 現在の感情表情をベースに、微弱な表情変化を重ねる
+	 * @param preset 表情プリセット
+	 * @param weight 表情の重み（0-1）
+	 * @param duration 持続時間（ミリ秒）
+	 */
+	triggerMicroExpression(
+		preset: ExpressionPreset,
+		weight: number,
+		duration: number,
+	): void {
+		if (!this.vrm) return;
+
+		// 思考中はマイクロ表情を抑制
+		if (this.isThinking) {
+			return;
+		}
+
+		// リップシンク中やセンチメント表情が設定されている場合は控えめに
+		let adjustedWeight = weight;
+
+		// リップシンク中は50%減
+		if (this.isLipSyncActive) {
+			adjustedWeight *= 0.5;
+		}
+
+		// 現在の感情表情がある場合は、さらに控えめに（30%）
+		// 感情表情の上に微弱な変化として重ねる
+		if (this.currentSentiment && this.currentSentiment !== "neutral") {
+			adjustedWeight *= 0.3;
+		}
+
+		// 現在の基本表情（感情表情）の重みを保持
+		const baseExpression = this.currentExpression;
+		const baseWeight = this.currentWeight;
+
+		// マイクロ表情を現在の表情に重ねる
+		// 同じ表情の場合は加算、異なる場合は微弱に混合
+		if (preset === baseExpression) {
+			// 同じ表情なら重みを加算（最大1.0まで）
+			const combinedWeight = Math.min(baseWeight + adjustedWeight, 1.0);
+			this.setExpression(preset, combinedWeight);
+		} else {
+			// 異なる表情の場合は、ベース表情を維持しつつ微弱にブレンド
+			// ベース表情: 70-80%、マイクロ表情: 20-30%
+			const blendRatio = 0.25; // マイクロ表情の影響度
+
+			// ベース表情を少し弱めて設定
+			this.setExpression(baseExpression, baseWeight * (1 - blendRatio));
+
+			// マイクロ表情を弱めて重ねる
+			safeSetExpression(this.vrm, preset, adjustedWeight * blendRatio, true);
+		}
+
+		// 指定時間後にベース表情に戻す
+		setTimeout(() => {
+			// リップシンク中でなく、感情表情が変わっていなければ元に戻す
+			if (!this.isLipSyncActive && this.currentExpression === baseExpression) {
+				this.setExpression(baseExpression, baseWeight);
+			}
+		}, duration);
+
+		// デバッグログ
+		if (EXPRESSION_LOG_CONFIG.enableDebugLogs) {
+			console.log(
+				`🎭 マイクロ表情トリガー: ${preset} (${adjustedWeight}) over ${baseExpression} (${baseWeight}) - ${duration}ms`,
+			);
+		}
 	}
 }

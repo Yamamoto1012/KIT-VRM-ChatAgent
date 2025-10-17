@@ -49,7 +49,7 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 	const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	// ストリーミング応答の蓄積用
-	const [accumulatedResponse, setAccumulatedResponse] = useState<string>("");
+	const accumulatedResponseRef = useRef<string>("");
 
 	// transcriptが更新されるたびに最終発話時刻を記録
 	useEffect(() => {
@@ -68,11 +68,11 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 		}
 		setLastSpokenTime(Date.now());
 		silenceTimeoutRef.current = setInterval(() => {
-			if (lastSpokenTime && Date.now() - lastSpokenTime > 1500) {
-				// 1.5秒無音なら自動停止
+			if (lastSpokenTime && Date.now() - lastSpokenTime > 3500) {
+				// 3.5秒無音なら自動停止
 				stopListening();
 			}
-		}, 300);
+		}, 500);
 		return () => {
 			if (silenceTimeoutRef.current) {
 				clearInterval(silenceTimeoutRef.current);
@@ -161,16 +161,12 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 				console.log(payloadQuery);
 
 				// 応答の蓄積をリセット
-				setAccumulatedResponse("");
+				accumulatedResponseRef.current = "";
 
 				const onChunk = (chunk: StreamChunk) => {
 					if (chunk.type === "content" && chunk.content) {
-						// ストリーミングチャンクを蓄積
-						setAccumulatedResponse((prev) => {
-							const newResponse = prev + chunk.content;
-							// 文章の区切りで逐次TTS処理（実装予定）
-							return newResponse;
-						});
+						// ストリーミングチャンクをrefに蓄積
+						accumulatedResponseRef.current += chunk.content;
 					} else if (chunk.type === "done") {
 						// ストリーミング完了時の処理
 						setProcessingState("responding");
@@ -189,21 +185,36 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 				);
 
 				// 最終的な応答をメッセージに追加
-				addAiMessage(accumulatedResponse);
+				const finalResponse = accumulatedResponseRef.current;
+				addAiMessage(finalResponse);
 
 				// プログレッシブTTSで音声再生
-				await speakProgressive(accumulatedResponse);
+				await speakProgressive(finalResponse);
 
+				// すべての処理が完了したら初期状態に戻す
 				setProcessingState("initial");
+
+				// VRMの思考状態を終了
+				setVrmThinkingState(false);
 			} catch (error) {
 				console.error("VoiceChat generateAIResponse error:", error);
-				// エラーメッセージをユーザーに表示
-				addAiMessage(
-					"申し訳ございません。応答の生成中にエラーが発生しました。",
-				);
 
+				// エラー内容をより詳細にログ出力
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+				console.error("Error details:", errorMessage);
+
+				// エラーメッセージをユーザーに表示
+				const userErrorMessage =
+					"申し訳ございません。応答の生成中にエラーが発生しました。もう一度お試しください。";
+				addAiMessage(userErrorMessage);
+
+				// エラー時は必ず状態をリセット
 				setProcessingState("initial");
 				setVrmThinkingState(false);
+
+				// 蓄積された応答もクリア
+				accumulatedResponseRef.current = "";
 			}
 		},
 		[
@@ -212,7 +223,6 @@ export const VoiceChat = ({ onClose, vrmWrapperRef }: VoiceChatProps) => {
 			setProcessingState,
 			setVrmThinkingState,
 			speakProgressive,
-			accumulatedResponse,
 		],
 	);
 

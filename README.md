@@ -30,6 +30,16 @@
 - **リアルタイムリップシンク**: 音声に同期した自然な口の動き
 - **感情表現システム**: テキスト感情分析に基づく表情・ジェスチャー変化
 - **VRMAアニメーション**: Idle、Thinking、ジェスチャーによる豊かな表現力
+- **ExpressionManager**: 基本表情・リップシンク・感情表現の競合防止システム
+- **Safe Expression Setting**: VRM操作のエラーハンドリング強化
+
+### MediaPipe統合・ユーザー検出システム
+- **リアルタイム検出**: MediaPipeによる顔・手・ポーズのリアルタイム検出
+- **プライバシー制御**: カメラアクセス管理とユーザー同意システム
+- **VRMリアクション**: ユーザーのジェスチャーや存在に対する自動VRM応答
+- **マルチモーダル検出**: 顔検出・手のジェスチャー・ポーズ推定の統合
+- **パフォーマンス最適化**: 検出閾値とフレームレートの動的調整
+- **適応的品質管理**: 処理負荷に応じた自動品質調整
 
 ### 高度なAI対話システム  
 - **RAG + LLM統合**: 検索拡張生成による高精度な日本語Q&A
@@ -42,6 +52,8 @@
 - **感情分析エンジン**: spaCy+ginza による日本語感情解析（ルールベース・ML・ハイブリッド）
 - **Text-to-Speech**: 高品質音声合成とストリーミング再生
 - **音声認識**: ブラウザベース音声入力
+- **AudioMutexManager**: 音声ストリーム競合防止システム
+- **リアルタイム音声解析**: Web Audio APIによる周波数解析とリップシンク
 
 ### 開発・運用基盤
 - **マイクロサービス**: Docker Compose による統合管理
@@ -52,10 +64,13 @@
 ## 技術スタック
 
 ### フロントエンド
-- **React 19** + **TypeScript** - メインフレームワーク
+- **React 19** + **TypeScript** - 最新メインフレームワーク
 - **Vite** - 高速開発ビルドツール
 - **Three.js** + **@pixiv/three-vrm** - 3D VRMレンダリング
-- **Tailwind CSS** + **shadcn/ui** - モダンUIデザイン
+- **@mediapipe/tasks-vision** - コンピュータビジョン・ユーザー検出
+- **Tailwind CSS v4** + **shadcn/ui** - 次世代UIデザイン
+- **@tanstack/react-router** - モダンルーティングシステム
+- **@tanstack/react-query** - データフェッチング・キャッシュ管理
 - **Jotai** - アトミック状態管理
 - **i18next** - 多言語国際化
 - **Framer Motion** - 高品質アニメーション
@@ -71,29 +86,37 @@
 - **pytest** - テストフレームワーク
 
 ### 開発・品質管理
-- **Biome** - コード品質・フォーマット
+- **Biome** - 高速コード品質・フォーマット（新採用）
 - **ESLint** - JavaScript/TypeScript静的解析
 - **Lefthook** - Git フック管理
 - **TypeScript** - 型安全性確保
+- **Conventional Commits** - コミットメッセージ標準化
 
 ## アーキテクチャ
 
 ### システム全体構成
 ```text
 OpenCanapasAgent2025/
-├── frontend/                    # React + Vite フロントエンドアプリ
-│   ├── src/features/VRM/       # 3D VRMアバター制御
-│   ├── src/features/ChatInterface/ # チャット・ストリーミング
-│   ├── src/features/VoiceChat/ # 音声対話システム
-│   ├── src/services/           # API統合・感情分析
-│   ├── src/locales/           # 多言語翻訳ファイル
-│   └── public/Model/          # VRMモデル・アニメーション
-└── backend/                    # FastAPI バックエンドAPI
-    ├── compose.yaml           # Docker Compose 設定
-    └── fast-api/             # FastAPIアプリケーション
-        ├── routers/          # APIエンドポイント
-        ├── services/         # ビジネスロジック・AI統合
-        └── data/            # 感情分析辞書・モデル
+├── frontend/                    # React 19 + Vite フロントエンドアプリ
+│   ├── src/features/           # 機能別コンポーネント
+│   │   ├── VRM/               # 3D VRMアバター制御
+│   │   ├── MediaPipe/         # ユーザー検出・カメラ制御
+│   │   ├── ChatInterface/     # チャット・ストリーミング
+│   │   ├── VoiceChat/         # 音声対話システム
+│   │   ├── ControlButtons/    # 制御ボタン群
+│   │   ├── ScreenManager/     # 画面管理
+│   │   ├── ModelSelector/     # VRMモデル選択
+│   │   ├── BackgroundSelector/ # 背景選択
+│   │   └── [その他Features]/  # モバイルチャット、音声波形等
+│   ├── src/services/          # API統合・感情分析
+│   ├── src/locales/          # 多言語翻訳ファイル
+│   └── public/Model/         # VRMモデル・アニメーション
+└── backend/                   # FastAPI バックエンドAPI
+    ├── compose.yaml          # Docker Compose 設定
+    └── fast-api/            # FastAPIアプリケーション
+        ├── routers/         # APIエンドポイント
+        ├── services/        # ビジネスロジック・AI統合
+        └── data/           # 感情分析辞書・モデル
 ```
 
 ### マイクロサービス構成
@@ -112,17 +135,19 @@ Docker Compose Services
 
 ### データフロー
 ```text
-ユーザー入力
+ユーザー入力 (テキスト/音声/カメラ)
     ↓
-[Frontend] React + Three.js VRM
+[Frontend] React 19 + Three.js VRM + MediaPipe
     ↓ (HTTP/WebAPI)
 [Backend] FastAPI
     ↓ (感情分析)
-[spaCy + ginza] → [VRM表情制御]
+[spaCy + ginza] → [ExpressionManager] → [VRM表情制御]
     ↓ (LLM API)
 [External LLM] → [ストリーミング応答]
     ↓ (TTS)
-[Aivis Engine] → [音声合成 + リップシンク]
+[Aivis Engine] → [AudioMutexManager] → [音声合成 + リップシンク]
+    ↑
+[MediaPipe] → [ユーザー検出] → [VRMリアクション]
 ```
 
 ![architecture](docs/arch.png)
@@ -221,11 +246,16 @@ pnpm dev                # 開発サーバー起動
 pnpm build              # 本番ビルド
 pnpm preview            # ビルド結果プレビュー
 pnpm test               # テスト実行
+pnpm test --watch       # テスト監視モード
 
-# コード品質
-pnpm lint               # ESLint
-pnpm check:write        # Biome チェック + 自動修正
-pnpm format:write       # Biome フォーマット
+# コード品質（Biome + ESLint）
+pnpm check:write        # Biome lint + format 自動修正
+pnpm lint               # ESLint チェック専用
+pnpm format:write       # Biome フォーマット専用
+
+# Git フック管理
+pnpm setup-hooks        # Lefthook Git hooks インストール
+pnpm prepare            # 自動フック設定（install時）
 ```
 
 ### バックエンド
@@ -259,24 +289,43 @@ curl http://localhost:10101/version
 ### フロントエンド詳細
 ```text
 frontend/src/
-├── features/              # 機能別コンポーネント
+├── features/              # 機能別コンポーネント（Container/View パターン）
 │   ├── VRM/              # VRMアバター制御
-│   │   ├── LipSync/      # リップシンク機能
-│   │   ├── VRMExpression/ # 表情管理
-│   │   └── hooks/        # VRM関連フック
-│   ├── ChatInterface/    # テキストチャット
-│   ├── VoiceChat/        # 音声対話
+│   │   ├── VRMExpression/    # ExpressionManager - 表情競合防止
+│   │   ├── LipSync/          # リアルタイムリップシンク
+│   │   ├── VRMWrapper/       # VRM統合管理
+│   │   └── hooks/            # VRM関連フック
+│   ├── MediaPipe/        # ユーザー検出・カメラ制御
+│   │   ├── hooks/            # 検出フック（顔・手・ポーズ）
+│   │   ├── services/         # 検出サービス群
+│   │   ├── components/       # プライバシー設定・検出状況
+│   │   ├── utils/            # 品質管理・スケジューラー
+│   │   └── store/            # 検出状態管理
+│   ├── ChatInterface/    # テキストチャット・ストリーミング
+│   ├── VoiceChat/        # 音声対話・AudioMutex
+│   ├── ControlButtons/   # アプリ制御ボタン群
+│   ├── ScreenManager/    # 画面状態管理
+│   ├── ModelSelector/    # VRMモデル選択UI
+│   ├── BackgroundSelector/ # 背景選択UI
+│   ├── VoiceWaveform/    # 音声波形表示
+│   ├── SimpleMobileChat/ # モバイル最適化チャット
 │   ├── CategoryNavigator/ # カテゴリナビゲーション
-│   └── LanguageSelector/ # 言語切り替え
+│   ├── LanguageSelector/ # 言語切り替え
+│   ├── SearchResult/     # 検索結果表示
+│   ├── IconButton/       # 共通アイコンボタン
+│   ├── BottomNavigation/ # ボトムナビゲーション
+│   ├── ActionPromt/      # アクションプロンプト
+│   └── ThinkingIndicator/ # 思考インジケーター
 ├── services/             # API統合
-│   ├── llmService.ts     # LLM API統合
+│   ├── llmService.ts     # LLM API統合・ストリーミング
 │   └── sentimentService.ts # 感情分析API
-├── store/                # Jotai状態管理
+├── store/                # Jotai グローバル状態管理
 ├── hooks/                # 汎用カスタムフック
-├── locales/              # 多言語翻訳
+├── components/ui/        # shadcn/ui コンポーネント
+├── locales/              # 多言語翻訳（機能別ネームスペース）
 │   ├── ja/              # 日本語
 │   └── en/              # 英語
-└── lib/                  # ユーティリティ
+└── lib/                  # ユーティリティ・設定
 ```
 
 ### バックエンド詳細
@@ -355,6 +404,16 @@ curl -X POST http://localhost:8000/sentiment/analyze \
 </details>
 
 <details>
+<summary>MediaPipe機能のカスタマイズ</summary>
+
+**検出精度とパフォーマンスの調整**:
+1. `src/features/MediaPipe/store/detectionAtoms.ts` で閾値調整
+2. `usePerformanceOptimization` フックでフレームレート制御
+3. プライバシー設定でカメラアクセス管理
+
+</details>
+
+<details>
 <summary>多言語対応の拡張</summary>
 
 1. `frontend/src/locales/` に新言語ディレクトリ作成
@@ -380,11 +439,20 @@ netstat -tulpn | grep -E ':(8000|10101|5173)'
 
 #### VRM表示エラー
 - **モデル読み込み失敗**: `public/Model/` パス確認・VRMファイル整合性
+- **Expression競合**: ExpressionManagerの動作確認・コンソールログ確認
 - **Three.js エラー**: ブラウザのWebGL対応確認
 - **パフォーマンス低下**: ブラウザの Hardware Acceleration 有効化
 
+#### MediaPipe検出エラー
+- **カメラアクセス拒否**: ブラウザのカメラ権限・HTTPS接続確認
+- **WebGL非対応**: ブラウザのWebGL対応・GPU加速確認
+- **検出精度低下**: 照明環境・検出閾値調整
+- **パフォーマンス問題**: フレームレート・品質設定調整
+- **プライバシー設定**: detectionAtoms のプライバシー設定確認
+
 #### 音声機能エラー
 - **マイク権限**: ブラウザの音声入力許可確認
+- **AudioMutex競合**: 複数音声ストリーム同時再生の確認
 - **TTS不動作**: ブラウザの音声合成API対応確認
 - **Aivis接続エラー**: `curl http://localhost:10101/version` で疎通確認
 
@@ -398,6 +466,12 @@ curl http://localhost:8000/health
 
 # 感情分析エラー
 docker compose exec fastapi python -c "import spacy; spacy.load('ja_ginza_electra')"
+
+# MediaPipe WebGL サポート確認
+# ブラウザで chrome://gpu/ にアクセスしてWebGL対応確認
+
+# カメラアクセス確認
+# ブラウザ設定 → プライバシーとセキュリティ → カメラ → 許可確認
 ```
 
 ---

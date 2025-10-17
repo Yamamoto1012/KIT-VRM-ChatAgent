@@ -1,6 +1,6 @@
 export const MODEL_THUMBNAIL_MAP: Record<string, string> = {
 	FRIT_256: "/thumbnails/frit256.png",
-	KIT_2_0: "/thumbnails/kit2.png",
+	KIT_2_0: "/thumbnails/Aizawa.png",
 	VJ_TAKAGI: "/thumbnails/vj-ta.png",
 };
 

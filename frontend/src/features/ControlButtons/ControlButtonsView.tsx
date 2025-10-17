@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+	Camera,
+	CameraOff,
 	Image,
 	Languages,
 	Menu,
@@ -15,14 +17,8 @@ import { useState } from "react";
 import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { IconButton } from "../IconButton/IconButton";
-import { InfoPanel } from "../InfoPanel/InfoPanel";
 
 export type ControlButtonsViewProps = {
-	/**
-	 * 情報パネルの表示状態
-	 */
-	showInfo: boolean;
-
 	/**
 	 * ミュート状態
 	 */
@@ -32,6 +28,11 @@ export type ControlButtonsViewProps = {
 	 * ストリーミングモード状態
 	 */
 	isStreamingMode: boolean;
+
+	/**
+	 * MediaPipe検出機能の有効/無効状態
+	 */
+	isMediaPipeEnabled: boolean;
 
 	/**
 	 * メニューが開いているかどうか（親に通知用）
@@ -54,11 +55,6 @@ export type ControlButtonsViewProps = {
 	onOpenBackgroundSelector: () => void;
 
 	/**
-	 * 情報パネル表示切替のハンドラー
-	 */
-	onToggleInfo: () => void;
-
-	/**
 	 * ミュート状態切替のハンドラー
 	 */
 	onToggleMute: () => void;
@@ -69,37 +65,33 @@ export type ControlButtonsViewProps = {
 	onOpenVoiceChat: () => void;
 
 	/**
-	 * 情報パネルを閉じるハンドラー
-	 */
-	onCloseInfo: () => void;
-
-	/**
 	 * ストリーミングモード切替のハンドラー
 	 */
 	onToggleStreamingMode: () => void;
+
+	/**
+	 * MediaPipe検出機能切替のハンドラー
+	 */
+	onToggleMediaPipe: () => void;
 };
 
 /**
  * 画面右下に配置されるコントロールボタン群のプレゼンテーションコンポーネント
- * @param showInfo - 情報パネルの表示状態
  * @param isMuted - ミュート状態
- * @param onToggleInfo - 情報パネル表示切替のハンドラー
  * @param onToggleMute - ミュート状態切替のハンドラー
  * @param onOpenVoiceChat - 音声チャットを開くハンドラー
- * @param onCloseInfo - 情報パネルを閉じるハンドラー
  */
 export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
-	showInfo,
 	isMuted,
 	isStreamingMode,
-	// onToggleInfo,
+	isMediaPipeEnabled,
 	onOpenLanguageSelector,
 	onOpenModelSelector,
 	onOpenBackgroundSelector,
 	onToggleMute,
 	onOpenVoiceChat,
-	onCloseInfo,
 	onToggleStreamingMode,
+	onToggleMediaPipe,
 	onMenuOpenChange,
 }) => {
 	const { t } = useTranslation("chat");
@@ -126,6 +118,13 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 			label: isStreamingMode ? t("streamingMode") : t("nonStreamingMode"),
 			onClick: onToggleStreamingMode,
 			isActive: isStreamingMode,
+		},
+		{
+			id: "mediapipe",
+			icon: isMediaPipeEnabled ? Camera : CameraOff,
+			label: isMediaPipeEnabled ? "ユーザー検出ON" : "ユーザー検出OFF",
+			onClick: onToggleMediaPipe,
+			isActive: isMediaPipeEnabled,
 		},
 		{
 			id: "language",
@@ -275,9 +274,6 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 					</motion.div>
 				</div>
 			)}
-
-			{/* 情報パネル */}
-			{showInfo && <InfoPanel onClose={onCloseInfo} />}
 		</>
 	);
 };

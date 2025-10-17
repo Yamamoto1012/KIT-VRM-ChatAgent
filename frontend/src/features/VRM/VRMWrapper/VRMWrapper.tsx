@@ -11,6 +11,7 @@ import type { AudioStreamingState } from "../../../store/chatAtoms";
 import { selectedModelConfigAtom } from "../../../store/modelAtoms";
 import { sentimentDebugAtom } from "../../../store/sentimentDebugStore";
 import type { SentimentCategory } from "../../../types/sentiment";
+import type { ExpressionManager } from "../VRMExpression/ExpressionManager";
 import { VRMRender } from "../VRMRender/VRMRender";
 
 export type VRMWrapperHandle = {
@@ -19,11 +20,17 @@ export type VRMWrapperHandle = {
 	setExpression?: (preset: string, weight: number) => void; // 表情設定
 	setExpressionForMotion?: (motionName: string) => void; // モーションに応じた表情設定
 	setExpressionBySentiment?: (category: SentimentCategory) => void; // 感情による表情設定
+	triggerMicroExpression?: (
+		preset: string,
+		weight: number,
+		duration: number,
+	) => void; // マイクロ表情トリガー
 	startThinking: () => void; // 思考モード開始
 	stopThinking: () => void; // 思考モード終了
 	isThinking: boolean; // 現在の思考状態
 	getLastMotion: () => string; // 現在のモーション名取得
 	restoreLastMotion: () => void; // 直前のモーションに戻す
+	getExpressionManager?: () => ExpressionManager | null | undefined; // ExpressionManagerインスタンスを取得
 };
 
 type VRMWrapperProps = {
@@ -35,11 +42,11 @@ type VRMWrapperProps = {
 
 /**
  * カテゴリ深度に応じたVRMモデルの位置を計算する関数
- * @param _depth - カテゴリの深度
+ * 現在は深度に関わらず固定位置を返す
  * @return - VRMモデルの位置座標
  */
 
-const getPositionForDepth = (_depth: number): [number, number, number] => {
+const getPositionForDepth = (): [number, number, number] => {
 	const basePosition: [number, number, number] = [0, -1, 0];
 	// 位置は固定にして、カテゴリ深度による変更を無効化
 	return basePosition;
@@ -78,6 +85,12 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 			setExpression?: (preset: string, weight: number) => void;
 			setExpressionForMotion?: (motionName: string) => void;
 			setExpressionBySentiment?: (category: SentimentCategory) => void;
+			triggerMicroExpression?: (
+				preset: string,
+				weight: number,
+				duration: number,
+			) => void;
+			getExpressionManager?: () => ExpressionManager | null | undefined;
 		} | null>(null);
 
 		// 直前のモーション名を保持
@@ -242,6 +255,15 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 					getExpressionForSentiment(category);
 				smoothSetExpression(preset, weight, duration);
 			},
+			triggerMicroExpression: (
+				preset: string,
+				weight: number,
+				duration: number,
+			) => {
+				if (vrmRenderRef.current?.triggerMicroExpression) {
+					vrmRenderRef.current.triggerMicroExpression(preset, weight, duration);
+				}
+			},
 			startThinking: () => {
 				setIsThinking(true);
 				setIsPaused(false);
@@ -251,6 +273,12 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 				if (vrmRenderRef.current?.setExpression) {
 					vrmRenderRef.current.setExpression("neutral", 0.5);
 				}
+				// ExpressionManagerに思考中であることを通知
+				const expressionManager =
+					vrmRenderRef.current?.getExpressionManager?.();
+				if (expressionManager) {
+					expressionManager.setThinking(true);
+				}
 			},
 			stopThinking: () => {
 				setIsThinking(false);
@@ -258,11 +286,20 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 				const defaultMotion = "/Motion/StandingIdle.vrma";
 				crossFadeToMotion(defaultMotion);
 				lastMotionRef.current = defaultMotion;
+				// ExpressionManagerに思考終了を通知
+				const expressionManager =
+					vrmRenderRef.current?.getExpressionManager?.();
+				if (expressionManager) {
+					expressionManager.setThinking(false);
+				}
 			},
 			isThinking,
 			getLastMotion: () => lastMotionRef.current,
 			restoreLastMotion: () => {
 				crossFadeToMotion(lastMotionRef.current);
+			},
+			getExpressionManager: () => {
+				return vrmRenderRef.current?.getExpressionManager?.();
 			},
 		}));
 
@@ -292,7 +329,7 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 		const vrmOptions = {
 			vrmUrl: modelConfig.vrmUrl,
 			vrmaUrl: modelConfig.defaultMotion || "/Motion/StandingIdle.vrma",
-			position: getPositionForDepth(categoryDepth),
+			position: getPositionForDepth(),
 			rotation: getRotationForDepth(),
 			lookAtCamera: true,
 			ref: vrmRenderRef,
