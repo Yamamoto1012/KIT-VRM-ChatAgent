@@ -7,7 +7,10 @@ import {
 	useRef,
 } from "react";
 import { Clock, Euler, Object3D, Vector3 } from "three";
-import { VRM_EXPRESSION_CONFIG } from "../constants/vrmExpressions";
+import {
+	type ExpressionPreset,
+	VRM_EXPRESSION_CONFIG,
+} from "../constants/vrmExpressions";
 import { useVRM } from "../hooks/useVRM";
 import { useVRMExpression } from "../hooks/useVRMExpression";
 
@@ -71,6 +74,20 @@ export const VRMRender = forwardRef(
 			setExpression: expressions.setExpression,
 			setExpressionForMotion: expressions.setExpressionForMotion,
 			setExpressionBySentiment: expressions.setExpressionBySentiment,
+			triggerMicroExpression: (
+				preset: string,
+				weight: number,
+				duration: number,
+			) => {
+				if (expressions.expressionManager) {
+					// presetはExpressionPresetと互換性があることを前提とする
+					expressions.expressionManager.triggerMicroExpression(
+						preset as ExpressionPreset,
+						weight,
+						duration,
+					);
+				}
+			},
 			playAudio: expressions.playAudio,
 			isAudioInitialized: expressions.isAudioInitialized,
 			getExpressionManager: () => expressions.expressionManager,

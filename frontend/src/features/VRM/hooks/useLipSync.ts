@@ -5,6 +5,7 @@ import { LipSync } from "../LipSync/lipSync";
 import type { LipSyncAnalyzeResult } from "../LipSync/types";
 import { ExpressionManager } from "../VRMExpression/ExpressionManager";
 import { VRM_EXPRESSION_CONFIG } from "../constants/vrmExpressions";
+import { useAcousticFeatureDetector } from "./audio/useAcousticFeatureDetector";
 
 /**
  * 日本語文字から音素への変換テーブル
@@ -125,6 +126,9 @@ export const useLipSync = (
 	// ExpressionManagerのインスタンスを作成・管理
 	const expressionManager = useMemo(() => new ExpressionManager(vrm), [vrm]);
 
+	// 音響特徴検出器のhook
+	const acousticFeatureDetector = useAcousticFeatureDetector();
+
 	// VRMが変更された時にExpressionManagerを更新
 	useEffect(() => {
 		expressionManager.setVRM(vrm);
@@ -229,7 +233,7 @@ export const useLipSync = (
 				return;
 			}
 
-			const { volume, phoneme, confidence } = result;
+			const { volume, phoneme, confidence, frequency } = result;
 
 			if (lipSyncMode === "acoustic" || lipSyncMode === "hybrid") {
 				// 音量の平滑化（より細かい変化に対応）
@@ -267,13 +271,29 @@ export const useLipSync = (
 						// 低音量時は軽く口を開ける
 						expressionManager.setLipSyncByAcousticData(0.2, "a", 0.3);
 					}
+
+					// 音響特徴ベースのマイクロ表情検出
+					const pitch = frequency || 0;
+					const acousticTrigger = acousticFeatureDetector.detectFeatures(
+						normalizedVolume,
+						pitch,
+					);
+
+					if (acousticTrigger) {
+						// マイクロ表情をトリガー
+						expressionManager.triggerMicroExpression(
+							acousticTrigger.type,
+							acousticTrigger.weight,
+							acousticTrigger.duration,
+						);
+					}
 				} else {
 					// 無音時は段階的に口を閉じる
 					expressionManager.setLipSyncActive(false);
 				}
 			}
 		},
-		[expressionManager, lipSyncMode, smoothVolume],
+		[expressionManager, lipSyncMode, smoothVolume, acousticFeatureDetector],
 	);
 
 	/**

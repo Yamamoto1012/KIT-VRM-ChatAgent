@@ -66,19 +66,38 @@ export const useVoiceChat = () => {
 			}
 			stopTTS?.();
 
+			// 音声認識開始時に transcript をクリア
+			setTranscript("");
+
 			const recognition = new SpeechRecognitionConstructor();
 			recognition.continuous = true;
 			recognition.interimResults = true;
+			recognition.maxAlternatives = 1; // 認識候補を1つに絞る
 
 			// 現在の言語設定に応じて音声認識の言語を設定
 			const recognitionLang = getSpeechRecognitionLanguage(currentLanguage);
 			recognition.lang = recognitionLang;
 
-			recognition.onresult = (event: WebSpeechRecognitionEvent) => {
-				const result = event.results[event.results.length - 1];
-				const transcriptText = result[0].transcript;
+			// console.log("[VoiceChat] Speech recognition initialized:", {
+			// 	lang: recognitionLang,
+			// 	continuous: true,
+			// 	interimResults: true,
+			// });
 
-				setTranscript(transcriptText);
+			recognition.onresult = (event: WebSpeechRecognitionEvent) => {
+				// すべての結果を連結して冒頭部分も含める
+				let fullTranscript = "";
+				for (let i = 0; i < event.results.length; i++) {
+					fullTranscript += event.results[i][0].transcript;
+				}
+
+				console.log("[VoiceChat] Transcript update:", {
+					resultCount: event.results.length,
+					transcript: fullTranscript,
+					isFinal: event.results[event.results.length - 1]?.isFinal,
+				});
+
+				setTranscript(fullTranscript);
 			};
 
 			recognition.onerror = (event: WebSpeechRecognitionErrorEvent) => {
@@ -92,11 +111,22 @@ export const useVoiceChat = () => {
 				recognitionRef.current = null;
 			};
 
-			recognition.onspeechend = () => {
-				recognition.stop();
+			// speechendイベントによる自動停止を削除
+			// 無音タイムアウトで制御するため、意図しない停止を防ぐ
+			// recognition.onspeechend = () => {
+			// 	recognition.stop();
+			// };
+
+			recognition.onstart = () => {
+				console.log(
+					"[VoiceChat] Speech recognition started - ready for audio input",
+				);
 			};
 
-			recognition.onstart = () => {};
+			// 音声が実際に検出され始めたときのイベント
+			recognition.onspeechstart = () => {
+				console.log("[VoiceChat] Speech detected - recording started");
+			};
 
 			recognitionRef.current = recognition;
 			try {

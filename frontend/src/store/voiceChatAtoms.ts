@@ -55,7 +55,6 @@ export const vrmIsThinkingAtom = atom<boolean>(false);
  */
 export const startListeningAtom = atom(null, (_get, set) => {
 	set(isListeningAtom, true);
-	set(transcriptAtom, "");
 	set(processingStateAtom, "recording");
 	set(aiResponseAtom, "");
 
