@@ -126,7 +126,7 @@ export const GreetingContainer = ({
 					// ChatInterfaceと同じように、enableRandomVariationをtrueに設定
 					// forceUpdateをtrueにして確実に表情を更新
 					expressionManager.setExpressionBySentiment(sentimentCategory, {
-						enableRandomVariation: true,
+						enableRandomVariation: false,
 						forceUpdate: true,
 					});
 				}
