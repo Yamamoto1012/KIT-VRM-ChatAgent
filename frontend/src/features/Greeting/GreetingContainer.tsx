@@ -38,7 +38,7 @@ export const GreetingContainer = ({
 	 */
 	const isFirstVisit = useMemo(() => {
 		if (!playOnFirstVisit) {
-			return true; // playOnFirstVisit が false の場合は常に再生
+			return false; // playOnFirstVisit が false の場合は再生しない
 		}
 
 		const visited = localStorage.getItem(FIRST_VISIT_KEY);
@@ -106,20 +106,12 @@ export const GreetingContainer = ({
 			// 重複トリガーを防止（500ms以内の重複を無視）
 			const now = Date.now();
 			if (now - lastTriggerTimeRef.current < 500) {
-				console.log(
-					"[GreetingContainer] Ignoring duplicate trigger (within 500ms)",
-				);
 				return;
 			}
 			lastTriggerTimeRef.current = now;
 
 			// 再生中でない場合のみトリガーを処理
 			if (!isPlaying && !isLoading) {
-				console.log(
-					"[GreetingContainer] External greeting trigger received:",
-					data,
-				);
-
 				// 1. 感情表情を設定（ChatInterfaceと同様に）
 				const expressionManager =
 					vrmWrapperRef.current?.getExpressionManager?.();

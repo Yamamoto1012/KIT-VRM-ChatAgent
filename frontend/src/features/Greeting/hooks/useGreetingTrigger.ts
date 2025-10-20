@@ -30,6 +30,10 @@ export interface UseGreetingTriggerReturn {
 	isConnected: boolean;
 }
 
+// React Strict Mode対策
+let globalServiceInstance: GreetingTriggerService | null = null;
+let globalConnectionCount = 0; // アクティブな接続数をカウント
+
 /**
  * グリーティングトリガー受信フック
  * @param options - フックオプション
@@ -48,7 +52,6 @@ export const useGreetingTrigger = (
 	 */
 	const handleTrigger = useCallback(
 		(data: TriggerEventData) => {
-			console.log("Greeting trigger received from external device:", data);
 			onTrigger?.(data);
 		},
 		[onTrigger],
@@ -106,22 +109,35 @@ export const useGreetingTrigger = (
 	 */
 	// biome-ignore lint/correctness/useExhaustiveDependencies: マウント時のみ実行するため依存配列は空
 	useEffect(() => {
-		// 既に接続されている、または接続中の場合はスキップ（Strict Mode対策）
-		if (autoConnect && !isConnectedRef.current && !serviceRef.current) {
-			console.log("[useGreetingTrigger] Auto-connecting on mount");
-			serviceRef.current = new GreetingTriggerService(wsConfig);
-			serviceRef.current.connect(handleTrigger, handleError);
-			isConnectedRef.current = true;
+		if (!autoConnect) return;
+
+		// グローバルインスタンスが存在しない場合のみ作成
+		if (!globalServiceInstance) {
+			globalServiceInstance = new GreetingTriggerService(wsConfig);
+			globalServiceInstance.connect(handleTrigger, handleError);
+		} else {
+			console.log(
+				"[useGreetingTrigger] Reusing existing global singleton instance",
+			);
 		}
+
+		// このフックインスタンスがグローバルインスタンスを参照
+		serviceRef.current = globalServiceInstance;
+		isConnectedRef.current = true;
+		globalConnectionCount++;
 
 		// アンマウント時のクリーンアップ
 		return () => {
-			if (serviceRef.current) {
-				console.log("[useGreetingTrigger] Cleaning up on unmount");
-				serviceRef.current.disconnect();
-				serviceRef.current = null;
-				isConnectedRef.current = false;
+			globalConnectionCount--;
+
+			// 全てのフックインスタンスがアンマウントされた場合のみ切断
+			if (globalConnectionCount === 0 && globalServiceInstance) {
+				globalServiceInstance.disconnect();
+				globalServiceInstance = null;
 			}
+
+			serviceRef.current = null;
+			isConnectedRef.current = false;
 		};
 	}, []);
 

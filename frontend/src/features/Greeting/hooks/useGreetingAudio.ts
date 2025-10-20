@@ -142,10 +142,9 @@ export const useGreetingAudio = (
 
 									// 音声の長さを取得するためにAudioContextでデコード
 									const audioContext = new AudioContext();
-									const response = await fetch(audioURL);
-									const arrayBuffer = await response.arrayBuffer();
-									const audioBuffer =
-										await audioContext.decodeAudioData(arrayBuffer);
+									const audioBuffer = await audioContext.decodeAudioData(
+										combinedData.buffer.slice(0),
+									);
 									const duration = audioBuffer.duration * 1000; // ミリ秒に変換
 
 									console.log(
@@ -158,7 +157,6 @@ export const useGreetingAudio = (
 									// VRMWrapperを使用して音声を再生（リップシンク付き）
 									if (options.vrmWrapperRef?.current?.playAudio) {
 										console.log(
-											"[GreetingAudio] Playing audio via VRMWrapper with lip-sync",
 											lipSyncText
 												? `(text: ${lipSyncText.substring(0, 30)}...)`
 												: "(no text)",
@@ -169,9 +167,6 @@ export const useGreetingAudio = (
 											lipSyncText,
 										);
 									} else {
-										console.warn(
-											"[GreetingAudio] VRMWrapper not available, playing without lip-sync",
-										);
 										// フォールバック: HTMLAudioElementで再生
 										const audio = new Audio(audioURL);
 										await audio.play();
