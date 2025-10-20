@@ -71,15 +71,13 @@ export const GreetingContainerView = ({
 							{/* ローディングスピナー */}
 							<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
 							<span className="text-sm font-medium">
-								{isLoading
-									? "グリーティングを読み込み中..."
-									: "話しています..."}
+								{isLoading ? "" : "話しています..."}
 							</span>
 						</div>
 					</motion.div>
 				)}
 
-				{error && (
+				{/* {error && (
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -94,7 +92,7 @@ export const GreetingContainerView = ({
 							<p className="mt-1 text-xs opacity-80">{error.message}</p>
 						</div>
 					</motion.div>
-				)}
+				)} */}
 			</AnimatePresence>
 		</>
 	);
