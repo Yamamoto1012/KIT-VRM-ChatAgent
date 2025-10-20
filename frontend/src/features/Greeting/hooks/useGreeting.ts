@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { VRMWrapperHandle } from "../../VRM/VRMWrapper/VRMWrapper";
-import { mapGreetingSentimentToCategory } from "../utils/sentimentMapper";
 import { useGreetingAudio } from "./useGreetingAudio";
 import { useGreetingTrigger } from "./useGreetingTrigger";
 
