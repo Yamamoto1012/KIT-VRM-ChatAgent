@@ -76,7 +76,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 			{isRecording && <VoiceWaveform isRecording={isRecording} />}
 
 			{/* 入力エリア */}
-			<div className="flex items-end gap-2">
+			<div className="flex items-center gap-2">
 				<div className="relative flex-1">
 					<textarea
 						ref={textareaRef}
@@ -98,6 +98,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 							focus-visible:outline-none
 							transition-all duration-300
 							touch-manipulation
+							align-middle
 							${isRecording ? "bg-red-50 border-red-200" : "border-0"}
 							${
 								isCorrectingTypo
@@ -111,6 +112,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 								maxHeight: 200,
 								lineHeight: 1.5,
 								overflow: "hidden",
+								verticalAlign: "middle",
 								"--tw-ring-color": colors.accent,
 							} as React.CSSProperties
 						}
