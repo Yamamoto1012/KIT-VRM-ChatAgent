@@ -3,13 +3,14 @@ import "./App.css";
 import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "./components/AppLayout";
+import { AudioPlayingIndicator } from "./components/AudioPlayingIndicator";
 import {
 	SentimentDebugToggle,
 	SentimentDebugView,
 } from "./components/debug/SentimentDebugView";
 import type { ChatInterfaceHandle } from "./features/ChatInterface/ChatInterface";
 import { ControlButtons } from "./features/ControlButtons/ControlButtons";
-import { GreetingContainer } from "./features/Greeting/GreetingContainer";
+import { useGreeting } from "./features/Greeting/hooks/useGreeting";
 import { MediaPipeDetection } from "./features/MediaPipe/MediaPipeDetection";
 import { MotionViewer, MotionViewerToggle } from "./features/MotionViewer";
 import { ScreenManager } from "./features/ScreenManager/ScreenManager";
@@ -71,6 +72,13 @@ export default function App() {
 		originalHandleAskQuestion(question);
 	};
 
+	// グリーティング機能を有効化
+	useGreeting({
+		vrmWrapperRef,
+		autoPlay: true,
+		playOnFirstVisit: false,
+	});
+
 	return (
 		<AppLayout>
 			{/* 3Dモデル表示領域 */}
@@ -79,13 +87,6 @@ export default function App() {
 				showActionPrompt={showActionPrompt}
 				showSearchResult={showSearchResult}
 				vrmWrapperRef={vrmWrapperRef}
-			/>
-
-			{/* グリーティング */}
-			<GreetingContainer
-				vrmWrapperRef={vrmWrapperRef}
-				autoPlay={true}
-				playOnFirstVisit={false}
 			/>
 
 			{/* 音声チャットが非表示の時のみUIを表示 */}
@@ -142,6 +143,9 @@ export default function App() {
 
 			{/* 音声チャットダイアログ */}
 			<VoiceChatDialog vrmWrapperRef={vrmWrapperRef} />
+
+			{/* グローバル音声再生インジケーター */}
+			<AudioPlayingIndicator />
 
 			{/* 感情分析デバッグ機能 */}
 			<SentimentDebugToggle />

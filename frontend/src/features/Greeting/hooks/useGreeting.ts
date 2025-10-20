@@ -1,15 +1,15 @@
 /**
- * グリーティング機能のコンテナコンポーネント
+ * グリーティング機能のカスタムフック
+ * 外部トリガーの監視、自動再生、音声再生の管理を行う
  */
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { VRMWrapperHandle } from "../VRM/VRMWrapper/VRMWrapper";
-import { GreetingContainerView } from "./GreetingContainerView";
-import { useGreetingAudio } from "./hooks/useGreetingAudio";
-import { useGreetingTrigger } from "./hooks/useGreetingTrigger";
-import { mapGreetingSentimentToCategory } from "./utils/sentimentMapper";
+import type { VRMWrapperHandle } from "../../VRM/VRMWrapper/VRMWrapper";
+import { mapGreetingSentimentToCategory } from "../utils/sentimentMapper";
+import { useGreetingAudio } from "./useGreetingAudio";
+import { useGreetingTrigger } from "./useGreetingTrigger";
 
-export interface GreetingContainerProps {
+export interface UseGreetingOptions {
 	/** VRM Wrapperの参照 */
 	vrmWrapperRef: React.RefObject<VRMWrapperHandle | null>;
 	/** 自動再生を有効にするか */
@@ -23,14 +23,14 @@ export interface GreetingContainerProps {
 const FIRST_VISIT_KEY = "greeting-first-visit";
 
 /**
- * グリーティングコンテナ
+ * グリーティング機能を提供するカスタムフック
  */
-export const GreetingContainer = ({
+export const useGreeting = ({
 	vrmWrapperRef,
 	autoPlay = true,
 	playOnFirstVisit = false,
 	onComplete,
-}: GreetingContainerProps) => {
+}: UseGreetingOptions): void => {
 	const hasPlayedRef = useRef(false);
 
 	/**
@@ -54,15 +54,11 @@ export const GreetingContainer = ({
 	 * グリーティング完了時の処理
 	 */
 	const handleComplete = useCallback(() => {
-		console.log(
-			"[GreetingContainer] Greeting completed, resetting expressions",
-		);
+		console.log("[useGreeting] Greeting completed, resetting expressions");
 		// リップシンクと感情表情をリセット
 		const expressionManager = vrmWrapperRef.current?.getExpressionManager?.();
 		if (expressionManager) {
-			console.log(
-				"[GreetingContainer] Resetting lip-sync and sentiment expressions",
-			);
+			console.log("[useGreeting] Resetting lip-sync and sentiment expressions");
 			expressionManager.resetLipSyncExpressions();
 
 			// 感情表情もニュートラルに戻す
@@ -74,9 +70,7 @@ export const GreetingContainer = ({
 			// 確実にニュートラル状態に戻すために、全ての表情ウェイトをリセット
 			expressionManager.resetAllExpressions?.();
 		} else {
-			console.warn(
-				"[GreetingContainer] ExpressionManager not available for reset",
-			);
+			console.warn("[useGreeting] ExpressionManager not available for reset");
 		}
 
 		onComplete?.();
@@ -90,12 +84,13 @@ export const GreetingContainer = ({
 	};
 
 	// useGreetingAudio フックを使用
-	const { playGreeting, stopGreeting, isPlaying, isLoading, error } =
-		useGreetingAudio({
+	const { playGreeting, stopGreeting, isPlaying, isLoading } = useGreetingAudio(
+		{
 			vrmWrapperRef,
 			onComplete: handleComplete,
 			onError: handleError,
-		});
+		},
+	);
 
 	/**
 	 * 外部トリガー受信時の処理（重複防止付き）
@@ -120,7 +115,7 @@ export const GreetingContainer = ({
 						data.sentiment,
 					);
 					console.log(
-						`[GreetingContainer] Setting greeting expression based on sentiment: ${data.sentiment} -> ${sentimentCategory}`,
+						`[useGreeting] Setting greeting expression based on sentiment: ${data.sentiment} -> ${sentimentCategory}`,
 					);
 
 					// ChatInterfaceと同じように、enableRandomVariationをtrueに設定
@@ -135,13 +130,13 @@ export const GreetingContainer = ({
 				// テキストデータも一緒に渡す
 				playGreeting(data.text).catch((error) => {
 					console.error(
-						"[GreetingContainer] Failed to play greeting from external trigger:",
+						"[useGreeting] Failed to play greeting from external trigger:",
 						error,
 					);
 				});
 			} else {
 				console.log(
-					"[GreetingContainer] Greeting already playing, ignoring external trigger",
+					"[useGreeting] Greeting already playing, ignoring external trigger",
 				);
 			}
 		},
@@ -202,22 +197,4 @@ export const GreetingContainer = ({
 			stopGreeting();
 		};
 	}, [stopGreeting]);
-
-	/**
-	 * 手動でグリーティングを再生
-	 */
-	const handlePlayGreeting = useCallback(() => {
-		playGreeting().catch((error) => {
-			console.error("[GreetingContainer] Failed to play greeting:", error);
-		});
-	}, [playGreeting]);
-
-	return (
-		<GreetingContainerView
-			isPlaying={isPlaying}
-			isLoading={isLoading}
-			error={error}
-			onPlayGreeting={handlePlayGreeting}
-		/>
-	);
 };
