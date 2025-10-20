@@ -36,6 +36,9 @@ export class GreetingWebSocketService {
 		const wsUrl = this.config.wsUrl || DEFAULT_WS_URL;
 		const timeout = this.config.timeout || CONNECTION_TIMEOUT;
 
+		// 接続前にキャッシュをクリア
+		this.audioChunks = [];
+
 		try {
 			this.ws = new WebSocket(wsUrl);
 			this.ws.binaryType = "arraybuffer";

@@ -3,7 +3,7 @@
  * WebSocket経由で音声を受信し、VRMWrapperの音声再生機能と統合
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { playAudio } from "../../../lib/AudioMutexManager";
 import {
 	type GreetingWebSocketConfig,
@@ -53,7 +53,9 @@ export const useGreetingAudio = (
 		}
 
 		// WAVデータからBlobを作成
-		const blob = new Blob([audioData], { type: "audio/wav" });
+		const blob = new Blob([audioData.buffer as ArrayBuffer], {
+			type: "audio/wav",
+		});
 		const url = URL.createObjectURL(blob);
 		audioURLRef.current = url;
 		return url;
@@ -74,6 +76,13 @@ export const useGreetingAudio = (
 			console.log("[GreetingAudio] Starting greeting playback");
 			setIsLoading(true);
 			setError(null);
+
+			// 既存の音声URLを破棄
+			if (audioURLRef.current) {
+				console.log("[GreetingAudio] Revoking previous audio URL");
+				URL.revokeObjectURL(audioURLRef.current);
+				audioURLRef.current = null;
+			}
 
 			// WebSocketサービスのインスタンスを作成
 			serviceRef.current = new GreetingWebSocketService(options.wsConfig);
@@ -267,6 +276,24 @@ export const useGreetingAudio = (
 		setIsPlaying(false);
 		isPlayingRef.current = false;
 		setIsLoading(false);
+		setError(null);
+	}, []);
+
+	// コンポーネントのアンマウント時のクリーンアップ
+	useEffect(() => {
+		return () => {
+			console.log("[GreetingAudio] Component unmounting, cleaning up");
+			// WebSocketサービスを切断
+			if (serviceRef.current) {
+				serviceRef.current.disconnect();
+				serviceRef.current = null;
+			}
+			// 音声URLを破棄
+			if (audioURLRef.current) {
+				URL.revokeObjectURL(audioURLRef.current);
+				audioURLRef.current = null;
+			}
+		};
 	}, []);
 
 	return {

@@ -53,7 +53,7 @@ export const GreetingContainer = ({
 	/**
 	 * グリーティング完了時の処理
 	 */
-	const handleComplete = () => {
+	const handleComplete = useCallback(() => {
 		console.log(
 			"[GreetingContainer] Greeting completed, resetting expressions",
 		);
@@ -66,9 +66,13 @@ export const GreetingContainer = ({
 			expressionManager.resetLipSyncExpressions();
 
 			// 感情表情もニュートラルに戻す
+			// forceUpdateをtrueにしてニュートラル表情を確実に適用
 			expressionManager.setExpressionBySentiment("neutral", {
 				forceUpdate: true,
 			});
+
+			// 確実にニュートラル状態に戻すために、全ての表情ウェイトをリセット
+			expressionManager.resetAllExpressions?.();
 		} else {
 			console.warn(
 				"[GreetingContainer] ExpressionManager not available for reset",
@@ -76,7 +80,7 @@ export const GreetingContainer = ({
 		}
 
 		onComplete?.();
-	};
+	}, [vrmWrapperRef, onComplete]);
 
 	/**
 	 * エラー発生時の処理
@@ -128,9 +132,10 @@ export const GreetingContainer = ({
 					);
 
 					// ChatInterfaceと同じように、enableRandomVariationをtrueに設定
+					// forceUpdateをtrueにして確実に表情を更新
 					expressionManager.setExpressionBySentiment(sentimentCategory, {
 						enableRandomVariation: true,
-						forceUpdate: false,
+						forceUpdate: true,
 					});
 				}
 
