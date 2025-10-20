@@ -8,8 +8,12 @@ import {
 	requestTTS,
 	revokeObjectURL,
 } from "@/lib/utils/audio";
+import {
+	startGlobalAudioPlaybackAtom,
+	stopGlobalAudioPlaybackAtom,
+} from "@/store/audioPlaybackAtoms";
 import { selectedModelConfigAtom } from "@/store/modelAtoms";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -195,10 +199,23 @@ export const useTextToSpeech = (options: UseTTSOptions = {}): UseTTSReturn => {
 	const { t } = useTranslation("voice");
 	const [state, dispatch] = useReducer(ttsReducer, initialState);
 
+	// グローバル音声再生状態を更新するアトム
+	const startAudioPlayback = useSetAtom(startGlobalAudioPlaybackAtom);
+	const stopAudioPlayback = useSetAtom(stopGlobalAudioPlaybackAtom);
+
 	// リソース管理のためのref群
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const currentURLRef = useRef<string | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
+
+	// 音声再生状態を監視してグローバル状態を更新
+	useEffect(() => {
+		if (state.isPlaying) {
+			startAudioPlayback("chat");
+		} else {
+			stopAudioPlayback();
+		}
+	}, [state.isPlaying, startAudioPlayback, stopAudioPlayback]);
 
 	/**
 	 * 全リソースのクリーンアップを実行

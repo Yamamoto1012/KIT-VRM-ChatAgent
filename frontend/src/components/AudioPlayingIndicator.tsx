@@ -1,6 +1,5 @@
 /**
  * 音声再生中インジケーターコンポーネント
- * アプリケーション全体で音声再生中の状態を表示する共通UI
  */
 
 import { AnimatePresence, motion } from "framer-motion";

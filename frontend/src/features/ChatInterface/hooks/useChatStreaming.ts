@@ -1,7 +1,11 @@
 import { useAtom, useSetAtom } from "jotai";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import {
+	startGlobalAudioPlaybackAtom,
+	stopGlobalAudioPlaybackAtom,
+} from "../../../store/audioPlaybackAtoms";
 import {
 	addMessageWithIdAtom,
 	updateMessageAtom,
@@ -85,6 +89,10 @@ export const useChatStreaming = ({
 	const updateMessage = useSetAtom(updateMessageAtom);
 	const { t } = useTranslation("chat");
 
+	// グローバル音声再生状態を更新するアトム
+	const startAudioPlayback = useSetAtom(startGlobalAudioPlaybackAtom);
+	const stopAudioPlayback = useSetAtom(stopGlobalAudioPlaybackAtom);
+
 	// ===== 内部状態ref =====
 	/** ストリーミングテキストを一時保存するバッファ */
 	const streamBuffer = useRef("");
@@ -139,6 +147,24 @@ export const useChatStreaming = ({
 	const { speak, stop: stopLegacyTTS } = useTextToSpeech({
 		vrmWrapperRef,
 	});
+
+	// ストリーミングTTSの再生状態を監視してグローバル状態を更新
+	useEffect(() => {
+		if (streamingTTSState.isPlaying) {
+			startAudioPlayback("chat");
+		} else if (
+			!streamingTTSState.isPlaying &&
+			!streamingTTSState.isGenerating
+		) {
+			// 再生が完了し、生成も終了している場合のみ停止
+			stopAudioPlayback();
+		}
+	}, [
+		streamingTTSState.isPlaying,
+		streamingTTSState.isGenerating,
+		startAudioPlayback,
+		stopAudioPlayback,
+	]);
 
 	/** センチメント分析機能 */
 	const { analyzeSentiment } = useSentiment({
@@ -222,7 +248,7 @@ export const useChatStreaming = ({
 				}
 			}, 50);
 		},
-		[streamingTTS.addChunk],
+		[streamingTTS],
 	);
 
 	/**
@@ -266,7 +292,7 @@ export const useChatStreaming = ({
 	const stopAllAudio = useCallback(() => {
 		stopLegacyTTS();
 		streamingTTS.stopStreaming();
-	}, [stopLegacyTTS, streamingTTS.stopStreaming]);
+	}, [stopLegacyTTS, streamingTTS]);
 
 	/**
 	 * 全てのバッファと状態をクリアする関数
@@ -285,7 +311,9 @@ export const useChatStreaming = ({
 		isAnimating.current = false;
 		// 表情解析位置をリセット
 		lastExpressionAnalysisIndexRef.current = 0;
-	}, []);
+		// TTSキューもクリア
+		streamingTTS.clearQueue();
+	}, [streamingTTS]);
 
 	/**
 	 * 現在の生成処理を完全に停止する関数

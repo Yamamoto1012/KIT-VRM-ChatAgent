@@ -3,12 +3,18 @@
  * WebSocket経由で音声を受信し、VRMWrapperの音声再生機能と統合
  */
 
+import { useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playAudio } from "../../../lib/AudioMutexManager";
 import {
 	type GreetingWebSocketConfig,
 	GreetingWebSocketService,
 } from "../../../services/greetingWebSocketService";
+import {
+	startGlobalAudioGeneratingAtom,
+	startGlobalAudioPlaybackAtom,
+	stopGlobalAudioPlaybackAtom,
+} from "../../../store/audioPlaybackAtoms";
 import type { VRMWrapperHandle } from "../../VRM/VRMWrapper/VRMWrapper";
 
 export interface UseGreetingAudioOptions {
@@ -37,6 +43,11 @@ export const useGreetingAudio = (
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
+
+	// グローバル音声再生状態を更新するアトム
+	const startAudioGenerating = useSetAtom(startGlobalAudioGeneratingAtom);
+	const startAudioPlayback = useSetAtom(startGlobalAudioPlaybackAtom);
+	const stopAudioPlayback = useSetAtom(stopGlobalAudioPlaybackAtom);
 
 	const serviceRef = useRef<GreetingWebSocketService | null>(null);
 	const audioURLRef = useRef<string | null>(null);
@@ -76,6 +87,9 @@ export const useGreetingAudio = (
 			console.log("[GreetingAudio] Starting greeting playback");
 			setIsLoading(true);
 			setError(null);
+
+			// グローバル状態を更新：音声生成中
+			startAudioGenerating("greeting");
 
 			// 既存の音声URLを破棄
 			if (audioURLRef.current) {
@@ -140,6 +154,9 @@ export const useGreetingAudio = (
 									isPlayingRef.current = true;
 									setIsLoading(false);
 
+									// グローバル状態を更新：音声再生中
+									startAudioPlayback("greeting");
+
 									// 音声の長さを取得するためにAudioContextでデコード
 									const audioContext = new AudioContext();
 									const audioBuffer = await audioContext.decodeAudioData(
@@ -181,6 +198,9 @@ export const useGreetingAudio = (
 									setIsPlaying(false);
 									isPlayingRef.current = false;
 
+									// グローバル状態を更新：再生停止
+									stopAudioPlayback();
+
 									// WebSocketサービスを切断
 									if (serviceRef.current) {
 										console.log(
@@ -202,6 +222,10 @@ export const useGreetingAudio = (
 									setIsPlaying(false);
 									isPlayingRef.current = false;
 									setError(error);
+
+									// グローバル状態を更新：再生停止
+									stopAudioPlayback();
+
 									options.onError?.(error);
 									reject(error);
 								}
@@ -212,6 +236,10 @@ export const useGreetingAudio = (
 								setIsPlaying(false);
 								isPlayingRef.current = false;
 								setError(wsError);
+
+								// グローバル状態を更新：再生停止
+								stopAudioPlayback();
+
 								options.onError?.(wsError);
 								reject(wsError);
 							},
@@ -225,6 +253,10 @@ export const useGreetingAudio = (
 						"[GreetingAudio] Audio playback blocked by AudioMutexManager (another audio is playing)",
 					);
 					setIsLoading(false);
+
+					// グローバル状態を更新：再生停止
+					stopAudioPlayback();
+
 					// エラーとして扱わず、静かにスキップする
 					return;
 				}
@@ -236,6 +268,9 @@ export const useGreetingAudio = (
 				isPlayingRef.current = false;
 				setError(playError);
 
+				// グローバル状態を更新：再生停止
+				stopAudioPlayback();
+
 				// WebSocketサービスを切断
 				if (serviceRef.current) {
 					serviceRef.current.disconnect();
@@ -246,7 +281,14 @@ export const useGreetingAudio = (
 				throw playError;
 			}
 		},
-		[isLoading, options, createAudioURL],
+		[
+			isLoading,
+			options,
+			createAudioURL,
+			startAudioGenerating,
+			startAudioPlayback,
+			stopAudioPlayback,
+		],
 	);
 
 	/**
@@ -272,7 +314,10 @@ export const useGreetingAudio = (
 		isPlayingRef.current = false;
 		setIsLoading(false);
 		setError(null);
-	}, []);
+
+		// グローバル状態を更新：再生停止
+		stopAudioPlayback();
+	}, [stopAudioPlayback]);
 
 	// コンポーネントのアンマウント時のクリーンアップ
 	useEffect(() => {
