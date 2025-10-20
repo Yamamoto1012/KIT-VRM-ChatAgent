@@ -88,7 +88,13 @@ export const VRMRender = forwardRef(
 					);
 				}
 			},
-			playAudio: expressions.playAudio,
+			playAudio: (audioUrl: string, text?: string) => {
+				if (expressions.playAudio) {
+					expressions.playAudio(audioUrl, text);
+				} else {
+					console.error("🎬 [VRMRender] expressions.playAudio is undefined!");
+				}
+			},
 			isAudioInitialized: expressions.isAudioInitialized,
 			getExpressionManager: () => expressions.expressionManager,
 		}));

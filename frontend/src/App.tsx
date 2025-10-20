@@ -9,6 +9,7 @@ import {
 } from "./components/debug/SentimentDebugView";
 import type { ChatInterfaceHandle } from "./features/ChatInterface/ChatInterface";
 import { ControlButtons } from "./features/ControlButtons/ControlButtons";
+import { GreetingContainer } from "./features/Greeting/GreetingContainer";
 import { MediaPipeDetection } from "./features/MediaPipe/MediaPipeDetection";
 import { MotionViewer, MotionViewerToggle } from "./features/MotionViewer";
 import { ScreenManager } from "./features/ScreenManager/ScreenManager";
@@ -78,6 +79,13 @@ export default function App() {
 				showActionPrompt={showActionPrompt}
 				showSearchResult={showSearchResult}
 				vrmWrapperRef={vrmWrapperRef}
+			/>
+
+			{/* グリーティング */}
+			<GreetingContainer
+				vrmWrapperRef={vrmWrapperRef}
+				autoPlay={true}
+				playOnFirstVisit={false}
 			/>
 
 			{/* 音声チャットが非表示の時のみUIを表示 */}

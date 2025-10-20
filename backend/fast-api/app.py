@@ -8,7 +8,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings, logger
-from routers import health, speech, dictionary, llm, sentiment
+from routers import (
+    dictionary,
+    greeting_trigger,
+    health,
+    llm,
+    sentiment,
+    speech,
+    websocket,
+)
 
 
 @asynccontextmanager
@@ -78,6 +86,8 @@ def create_application() -> FastAPI:
     app.include_router(dictionary.router, prefix="", tags=["dictionary"])
     app.include_router(llm.router, prefix="/api/llm", tags=["llm"])
     app.include_router(sentiment.router, prefix="", tags=["sentiment"])
+    app.include_router(websocket.router, prefix="", tags=["websocket"])
+    app.include_router(greeting_trigger.router, prefix="", tags=["greeting-trigger"])
     
     logger.info("AivisSpeech API サーバーを初期化しました")
     return app
