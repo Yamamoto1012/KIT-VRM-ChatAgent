@@ -41,5 +41,9 @@
 	"close": "Close",
 	"facilities": "Campus Facilities",
 	"studentLife": "Student Life",
-	"admissions": "Admissions"
+	"admissions": "Admissions",
+	"correctTypo": "Correct Typo",
+	"correctingTypo": "Correcting...",
+	"typoCorrectionError": "Failed to correct typo",
+	"typoCorrectionSuccess": "Corrected"
 }

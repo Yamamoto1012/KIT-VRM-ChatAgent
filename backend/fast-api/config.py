@@ -69,6 +69,11 @@ class Settings:
         self.stream_timeout: float = float(os.getenv("STREAM_TIMEOUT", "60.0"))
         self.verify_ssl: bool = os.getenv("VERIFY_SSL", "true").lower() == "true"
 
+        # OpenAI設定
+        self.openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+        self.openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.openai_timeout: float = float(os.getenv("OPENAI_TIMEOUT", "30.0"))
+
 
 class SentimentConfig:
     """感情分析の設定"""

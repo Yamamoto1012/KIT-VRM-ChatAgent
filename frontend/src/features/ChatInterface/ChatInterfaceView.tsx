@@ -11,6 +11,7 @@ export type ChatInterfaceViewProps = {
 	inputValue: string;
 	isThinking: boolean;
 	isRecording: boolean;
+	isCorrectingTypo?: boolean;
 	onInputChange: React.ChangeEventHandler<HTMLTextAreaElement>;
 	onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement>;
 	onSend: () => void;
@@ -18,6 +19,7 @@ export type ChatInterfaceViewProps = {
 	onReset: () => void;
 	onToggleRecording: () => void;
 	onStop: () => void;
+	onCorrectTypo?: () => void;
 	messagesEndRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -27,6 +29,7 @@ export type ChatInterfaceViewProps = {
  * @param inputValue - 入力フィールドの値
  * @param isThinking - 応答中かどうかのフラグ
  * @param isRecording - 音声入力中かどうかのフラグ
+ * @param isCorrectingTypo - 誤字修正中かどうかのフラグ
  * @param onInputChange - 入力値変更時のハンドラ
  * @param onKeyDown - キー入力時のハンドラ
  * @param onSend - 送信ボタン押下時のハンドラ
@@ -34,6 +37,7 @@ export type ChatInterfaceViewProps = {
  * @param onReset - チャットリセット時のハンドラ
  * @param onToggleRecording - 音声入力のトグルハンドラ
  * @param onStop - 音声入力停止時のハンドラ
+ * @param onCorrectTypo - 誤字修正ボタン押下時のハンドラ
  * @param messagesEndRef - メッセージの末尾を参照するためのRef
  */
 export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
@@ -41,6 +45,7 @@ export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
 	inputValue,
 	isThinking,
 	isRecording,
+	isCorrectingTypo,
 	onInputChange,
 	onKeyDown,
 	onSend,
@@ -48,6 +53,7 @@ export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
 	onReset,
 	onToggleRecording,
 	onStop,
+	onCorrectTypo,
 	messagesEndRef,
 }) => {
 	return (
@@ -75,11 +81,13 @@ export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
 				inputValue={inputValue}
 				isThinking={isThinking}
 				isRecording={isRecording}
+				isCorrectingTypo={isCorrectingTypo}
 				onInputChange={onInputChange}
 				onKeyDown={onKeyDown}
 				onSend={onSend}
 				onToggleRecording={onToggleRecording}
 				onStop={onStop}
+				onCorrectTypo={onCorrectTypo}
 			/>
 		</div>
 	);

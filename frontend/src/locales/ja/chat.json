@@ -41,5 +41,9 @@
 	"close": "閉じる",
 	"facilities": "キャンパスの施設について",
 	"studentLife": "学生生活について",
-	"admissions": "入試について"
+	"admissions": "入試について",
+	"correctTypo": "誤字修正",
+	"correctingTypo": "修正中...",
+	"typoCorrectionError": "誤字修正に失敗しました",
+	"typoCorrectionSuccess": "修正しました"
 }
