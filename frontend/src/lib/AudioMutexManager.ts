@@ -6,13 +6,23 @@
 type AudioMutexState = {
 	currentAudioType: "streaming" | "traditional" | null;
 	audioMutex: boolean;
-	currentAudioSource: "chatinterface" | "streaming-tts" | "fallback" | null;
+	currentAudioSource:
+		| "chatinterface"
+		| "streaming-tts"
+		| "fallback"
+		| "greeting"
+		| null;
 };
 
 type AudioStatus = {
 	isPlaying: boolean;
 	currentType: "streaming" | "traditional" | null;
-	currentSource: "chatinterface" | "streaming-tts" | "fallback" | null;
+	currentSource:
+		| "chatinterface"
+		| "streaming-tts"
+		| "fallback"
+		| "greeting"
+		| null;
 };
 
 type StreamingState = {
@@ -38,7 +48,7 @@ const audioMutexState: AudioMutexState = {
  */
 export async function playAudio(
 	type: "streaming" | "traditional",
-	source: "chatinterface" | "streaming-tts" | "fallback",
+	source: "chatinterface" | "streaming-tts" | "fallback" | "greeting",
 	audioFn: () => Promise<void>,
 ): Promise<boolean> {
 	// 既に音声が再生中の場合はスキップ
