@@ -5,6 +5,7 @@ import { Mic, MicOff, Send, SquareSlash, Wand2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { TypoCorrectionEffect } from "./TypoCorrectionEffect";
 
 export type ChatInputAreaProps = {
 	inputValue: string;
@@ -76,36 +77,48 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 			{/* 入力エリア */}
 			<div className="flex items-end gap-2">
-				<textarea
-					ref={textareaRef}
-					value={inputValue}
-					onChange={onInputChange}
-					onKeyDown={onKeyDown}
-					onInput={handleInput}
-					placeholder={isRecording ? t("recognizingVoice") : t("enterQuestion")}
-					disabled={isThinking || isRecording}
-					rows={1}
-					className={`
-						resize-none w-full rounded-md border-0 
-						px-3 py-3 md:px-3 md:py-2 
-						text-base md:text-base 
-						bg-white 
-						focus-visible:ring-2 
-						focus-visible:outline-none 
-						transition-all
-						touch-manipulation
-						${isRecording ? "bg-red-50" : ""}
-					`}
-					style={
-						{
-							minHeight: 48,
-							maxHeight: 200,
-							lineHeight: 1.5,
-							overflow: "hidden",
-							"--tw-ring-color": colors.accent,
-						} as React.CSSProperties
-					}
-				/>
+				<div className="relative flex-1">
+					<textarea
+						ref={textareaRef}
+						value={inputValue}
+						onChange={onInputChange}
+						onKeyDown={onKeyDown}
+						onInput={handleInput}
+						placeholder={
+							isRecording ? t("recognizingVoice") : t("enterQuestion")
+						}
+						disabled={isThinking || isRecording || isCorrectingTypo}
+						rows={1}
+						className={`
+							resize-none w-full rounded-md
+							px-3 py-3 md:px-3 md:py-2 pr-32
+							text-base md:text-base
+							bg-white
+							focus-visible:ring-2
+							focus-visible:outline-none
+							transition-all duration-300
+							touch-manipulation
+							${isRecording ? "bg-red-50 border-red-200" : "border-0"}
+							${
+								isCorrectingTypo
+									? "border-2 border-purple-200 bg-gradient-to-r from-purple-50/30 to-blue-50/30 shadow-sm"
+									: ""
+							}
+						`}
+						style={
+							{
+								minHeight: 48,
+								maxHeight: 200,
+								lineHeight: 1.5,
+								overflow: "hidden",
+								"--tw-ring-color": colors.accent,
+							} as React.CSSProperties
+						}
+					/>
+
+					{/* 誤字修正中のエフェクト */}
+					<TypoCorrectionEffect isVisible={isCorrectingTypo} />
+				</div>
 
 				{/* ボタンコンテナ */}
 				<div className="flex gap-2 flex-shrink-0">
