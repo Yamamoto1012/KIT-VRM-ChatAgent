@@ -40,6 +40,10 @@ export class ExpressionManager {
 	private lastMicroExpressionTime = 0;
 	private availableExpressions: string[] = [];
 	private isThinking = false; // 思考中フラグ
+	private sentimentExpressionBeforeLipSync: {
+		preset: ExpressionPreset | null;
+		weight: number;
+	} = { preset: null, weight: 0 }; // リップシンク前の感情表情を保存
 
 	constructor(vrm: VRM | null = null) {
 		this.vrm = vrm;
@@ -316,10 +320,37 @@ export class ExpressionManager {
 	 * リップシンク状態を手動で制御する
 	 */
 	setLipSyncActive(active: boolean): void {
-		this.isLipSyncActive = active;
-		if (!active) {
+		if (!this.vrm) return;
+
+		if (active && !this.isLipSyncActive) {
+			// リップシンク開始時：現在の感情表情を保存し、weightを下げる
+			this.sentimentExpressionBeforeLipSync = {
+				preset: this.currentExpression,
+				weight: this.currentWeight,
+			};
+
+			// 感情表情のweightを30%に下げる（目や眉の表情は残しつつ、口の動きを許容）
+			if (
+				this.currentExpression !== "neutral" &&
+				BASIC_EXPRESSIONS.includes(this.currentExpression)
+			) {
+				safeSetExpression(this.vrm, this.currentExpression, 0.3);
+			}
+		} else if (!active && this.isLipSyncActive) {
+			// リップシンク終了時：リップシンク表情をリセットし、感情表情を復元
 			this.resetLipSyncExpressions();
+
+			// 保存していた感情表情を復元
+			if (this.sentimentExpressionBeforeLipSync.preset) {
+				safeSetExpression(
+					this.vrm,
+					this.sentimentExpressionBeforeLipSync.preset,
+					this.sentimentExpressionBeforeLipSync.weight,
+				);
+			}
 		}
+
+		this.isLipSyncActive = active;
 	}
 
 	/**
