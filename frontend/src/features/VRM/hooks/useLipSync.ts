@@ -166,7 +166,6 @@ export const useLipSync = (
 	}, [streamingAudioQueue, expressionManager, lipSyncMode]);
 
 	// AudioContextの初期化
-	// ユーザーのインタラクション後に初期化される
 	useEffect(() => {
 		const initializeAudioContext = () => {
 			if (!audioContext) {
@@ -176,18 +175,10 @@ export const useLipSync = (
 			}
 		};
 
-		const handleUserInteraction = () => {
-			initializeAudioContext();
-			window.removeEventListener("click", handleUserInteraction);
-			window.removeEventListener("touchstart", handleUserInteraction);
-		};
-
-		window.addEventListener("click", handleUserInteraction);
-		window.addEventListener("touchstart", handleUserInteraction);
+		// コンポーネントマウント時に即座に初期化
+		initializeAudioContext();
 
 		return () => {
-			window.removeEventListener("click", handleUserInteraction);
-			window.removeEventListener("touchstart", handleUserInteraction);
 			if (audioContext) {
 				audioContext.close();
 			}
@@ -389,6 +380,11 @@ export const useLipSync = (
 				isPlayingAudioRef.current = true;
 				lastPhonemeRef.current = "";
 				smoothingBufferRef.current = [];
+
+				// リップシンクを有効化（感情表情のweightを自動調整）
+				if (expressionManager) {
+					expressionManager.setLipSyncActive(true);
+				}
 
 				// 音声終了時のクリーンアップ
 				const handleAudioEnd = () => {

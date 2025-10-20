@@ -9,6 +9,8 @@ export class LipSync {
 	public readonly timeDomainData: Float32Array;
 	private readonly frequencyAnalyzer: FrequencyAnalyzer;
 	private isInitialized = false;
+	private currentBufferSource: AudioBufferSourceNode | null = null;
+	private currentMonitorInterval: ReturnType<typeof setInterval> | null = null;
 
 	public constructor(audio: AudioContext) {
 		try {
@@ -109,8 +111,25 @@ export class LipSync {
 			return;
 		}
 
+		// 既存の再生を停止（二重再生防止）
+		if (this.currentBufferSource) {
+			try {
+				this.currentBufferSource.stop();
+				this.currentBufferSource.disconnect();
+			} catch (error) {
+				// stop()は既に停止している場合エラーになるので無視
+				console.warn("[LipSync] Failed to stop previous audio:", error);
+			}
+			this.currentBufferSource = null;
+		}
+
+		if (this.currentMonitorInterval) {
+			clearInterval(this.currentMonitorInterval);
+			this.currentMonitorInterval = null;
+		}
+
 		try {
-			const audioBuffer = await this.audio.decodeAudioData(buffer);
+			const audioBuffer = await this.audio.decodeAudioData(buffer.slice(0));
 
 			const bufferSource = this.audio.createBufferSource();
 			bufferSource.buffer = audioBuffer;
@@ -131,16 +150,24 @@ export class LipSync {
 				}
 			}, 30); // 30ミリ秒ごとに更新
 
+			// 現在の再生状態を保存
+			this.currentBufferSource = bufferSource;
+			this.currentMonitorInterval = monitorInterval;
+
 			bufferSource.start();
 
 			if (onEnded) {
 				bufferSource.addEventListener("ended", () => {
 					clearInterval(monitorInterval);
+					this.currentBufferSource = null;
+					this.currentMonitorInterval = null;
 					onEnded();
 				});
 			}
 		} catch (error) {
 			console.error("音声再生エラー:", error);
+			this.currentBufferSource = null;
+			this.currentMonitorInterval = null;
 			if (onEnded) onEnded();
 		}
 	}

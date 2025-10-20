@@ -3,12 +3,14 @@ import "./App.css";
 import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "./components/AppLayout";
+import { AudioPlayingIndicator } from "./components/AudioPlayingIndicator";
 import {
 	SentimentDebugToggle,
 	SentimentDebugView,
 } from "./components/debug/SentimentDebugView";
 import type { ChatInterfaceHandle } from "./features/ChatInterface/ChatInterface";
 import { ControlButtons } from "./features/ControlButtons/ControlButtons";
+import { useGreeting } from "./features/Greeting/hooks/useGreeting";
 import { MediaPipeDetection } from "./features/MediaPipe/MediaPipeDetection";
 import { MotionViewer, MotionViewerToggle } from "./features/MotionViewer";
 import { ScreenManager } from "./features/ScreenManager/ScreenManager";
@@ -69,6 +71,13 @@ export default function App() {
 	const handleAskQuestion = (question: string) => {
 		originalHandleAskQuestion(question);
 	};
+
+	// グリーティング機能を有効化
+	useGreeting({
+		vrmWrapperRef,
+		autoPlay: true,
+		playOnFirstVisit: false,
+	});
 
 	return (
 		<AppLayout>
@@ -134,6 +143,9 @@ export default function App() {
 
 			{/* 音声チャットダイアログ */}
 			<VoiceChatDialog vrmWrapperRef={vrmWrapperRef} />
+
+			{/* グローバル音声再生インジケーター */}
+			<AudioPlayingIndicator />
 
 			{/* 感情分析デバッグ機能 */}
 			<SentimentDebugToggle />
