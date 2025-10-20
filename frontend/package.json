@@ -26,6 +26,7 @@
 		"@radix-ui/react-dialog": "^1.1.6",
 		"@radix-ui/react-scroll-area": "^1.2.3",
 		"@radix-ui/react-slot": "^1.1.2",
+		"@radix-ui/react-tooltip": "^1.2.8",
 		"@react-three/drei": "^10.0.4",
 		"@react-three/fiber": "^9.1.0",
 		"@tailwindcss/vite": "^4.0.14",

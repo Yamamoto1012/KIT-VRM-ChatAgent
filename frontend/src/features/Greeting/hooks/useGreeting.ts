@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { VRMWrapperHandle } from "../../VRM/VRMWrapper/VRMWrapper";
-import { mapGreetingSentimentToCategory } from "../utils/sentimentMapper";
 import { useGreetingAudio } from "./useGreetingAudio";
 import { useGreetingTrigger } from "./useGreetingTrigger";
 
@@ -55,20 +54,10 @@ export const useGreeting = ({
 	 */
 	const handleComplete = useCallback(() => {
 		console.log("[useGreeting] Greeting completed, resetting expressions");
-		// リップシンクと感情表情をリセット
 		const expressionManager = vrmWrapperRef.current?.getExpressionManager?.();
 		if (expressionManager) {
-			console.log("[useGreeting] Resetting lip-sync and sentiment expressions");
-			expressionManager.resetLipSyncExpressions();
-
-			// 感情表情もニュートラルに戻す
-			// forceUpdateをtrueにしてニュートラル表情を確実に適用
-			expressionManager.setExpressionBySentiment("neutral", {
-				forceUpdate: true,
-			});
-
-			// 確実にニュートラル状態に戻すために、全ての表情ウェイトをリセット
-			expressionManager.resetAllExpressions?.();
+			// グリーティングモードを終了
+			expressionManager.endGreetingMode();
 		} else {
 			console.warn("[useGreeting] ExpressionManager not available for reset");
 		}
@@ -107,26 +96,14 @@ export const useGreeting = ({
 
 			// 再生中でない場合のみトリガーを処理
 			if (!isPlaying && !isLoading) {
-				// 1. 感情表情を設定（ChatInterfaceと同様に）
 				const expressionManager =
 					vrmWrapperRef.current?.getExpressionManager?.();
-				if (expressionManager && data.sentiment) {
-					const sentimentCategory = mapGreetingSentimentToCategory(
-						data.sentiment,
-					);
-					console.log(
-						`[useGreeting] Setting greeting expression based on sentiment: ${data.sentiment} -> ${sentimentCategory}`,
-					);
-
-					// ChatInterfaceと同じように、enableRandomVariationをtrueに設定
-					// forceUpdateをtrueにして確実に表情を更新
-					expressionManager.setExpressionBySentiment(sentimentCategory, {
-						enableRandomVariation: false,
-						forceUpdate: true,
-					});
+				if (expressionManager) {
+					// グリーティングモードを開始（目元を mild_positive に固定）
+					expressionManager.startGreetingMode();
 				}
 
-				// 2. グリーティング音声を再生（リップシンクも自動的に動作）
+				// グリーティング音声を再生（リップシンクも自動的に動作）
 				// テキストデータも一緒に渡す
 				playGreeting(data.text).catch((error) => {
 					console.error(
@@ -170,8 +147,14 @@ export const useGreeting = ({
 		) {
 			// VRMが読み込まれるまで少し待つ
 			const timer = setTimeout(() => {
-				if (vrmWrapperRef.current?.getExpressionManager?.()) {
+				const expressionManager =
+					vrmWrapperRef.current?.getExpressionManager?.();
+				if (expressionManager) {
 					hasPlayedRef.current = true;
+
+					// グリーティングモードを開始
+					expressionManager.startGreetingMode();
+
 					playGreeting().catch((error) => {
 						console.error("Failed to play greeting:", error);
 					});
