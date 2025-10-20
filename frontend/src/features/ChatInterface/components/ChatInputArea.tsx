@@ -1,4 +1,10 @@
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { VoiceWaveform } from "@/features/VoiceWaveform/VoiceWaveform";
 import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import { Mic, MicOff, Send, SquareSlash, Wand2 } from "lucide-react";
@@ -123,87 +129,115 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				</div>
 
 				{/* ボタンコンテナ */}
-				<div className="flex gap-2 flex-shrink-0">
-					{/* 誤字修正ボタン */}
-					{onCorrectTypo && (
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={onCorrectTypo}
-							disabled={
-								isThinking ||
-								isRecording ||
-								isCorrectingTypo ||
-								!inputValue.trim()
-							}
-							className={`
-								flex-shrink-0
-								h-12 w-12 md:h-11 md:w-11
-								touch-manipulation
-								${isCorrectingTypo ? "animate-pulse" : ""}
-							`}
-							title={isCorrectingTypo ? t("correctingTypo") : t("correctTypo")}
-						>
-							<Wand2 className="h-5 w-5 md:h-4 md:w-4" />
-						</Button>
-					)}
-
-					{/* マイクボタン */}
-					<Button
-						variant={isRecording ? "destructive" : "outline"}
-						size="icon"
-						onClick={onToggleRecording}
-						className={`
-							flex-shrink-0
-							h-12 w-12 md:h-11 md:w-11
-							touch-manipulation
-							${isRecording ? "animate-pulse" : ""}
-						`}
-						disabled={isThinking}
-						title={isRecording ? t("stopRecording") : t("askWithVoice")}
-					>
-						{isRecording ? (
-							<MicOff className="h-5 w-5 md:h-4 md:w-4" />
-						) : (
-							<Mic className="h-5 w-5 md:h-4 md:w-4" />
+				<TooltipProvider delayDuration={300}>
+					<div className="flex gap-2 flex-shrink-0">
+						{/* 誤字修正ボタン */}
+						{onCorrectTypo && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										onClick={onCorrectTypo}
+										disabled={
+											isThinking ||
+											isRecording ||
+											isCorrectingTypo ||
+											!inputValue.trim()
+										}
+										className={`
+											flex-shrink-0
+											h-12 w-12 md:h-11 md:w-11
+											touch-manipulation
+											${isCorrectingTypo ? "animate-pulse" : ""}
+										`}
+									>
+										<Wand2 className="h-5 w-5 md:h-4 md:w-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>
+										{isCorrectingTypo ? t("correctingTypo") : t("correctTypo")}
+									</p>
+								</TooltipContent>
+							</Tooltip>
 						)}
-					</Button>
 
-					{/* 送信ボタン */}
-					<Button
-						variant="default"
-						size="icon"
-						onClick={onSend}
-						disabled={isThinking || !inputValue.trim() || isRecording}
-						className="
-							text-white rounded-md hover:scale-95 duration-150 
-							h-12 w-12 md:h-11 md:w-11
-							touch-manipulation
-						"
-						style={{
-							backgroundColor: colors.primary,
-							borderColor: colors.primary,
-						}}
-						title={t("send")}
-					>
-						<Send className="h-5 w-5 md:h-4 md:w-4" />
-					</Button>
+						{/* マイクボタン */}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant={isRecording ? "destructive" : "outline"}
+									size="icon"
+									onClick={onToggleRecording}
+									className={`
+										flex-shrink-0
+										h-12 w-12 md:h-11 md:w-11
+										touch-manipulation
+										${isRecording ? "animate-pulse" : ""}
+									`}
+									disabled={isThinking}
+								>
+									{isRecording ? (
+										<MicOff className="h-5 w-5 md:h-4 md:w-4" />
+									) : (
+										<Mic className="h-5 w-5 md:h-4 md:w-4" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>{isRecording ? t("stopRecording") : t("askWithVoice")}</p>
+							</TooltipContent>
+						</Tooltip>
 
-					{/* 停止ボタン */}
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={onStop}
-						disabled={!isThinking}
-						className="
-							h-12 w-12 md:h-11 md:w-11
-							touch-manipulation
-						"
-						title={t("stopGeneration")}
-					>
-						<SquareSlash className="h-5 w-5 md:h-4 md:w-4" />
-					</Button>
-				</div>
+						{/* 送信ボタン */}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="default"
+									size="icon"
+									onClick={onSend}
+									disabled={isThinking || !inputValue.trim() || isRecording}
+									className="
+										text-white rounded-md hover:scale-95 duration-150
+										h-12 w-12 md:h-11 md:w-11
+										touch-manipulation
+									"
+									style={{
+										backgroundColor: colors.primary,
+										borderColor: colors.primary,
+									}}
+								>
+									<Send className="h-5 w-5 md:h-4 md:w-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>{t("send")}</p>
+							</TooltipContent>
+						</Tooltip>
+
+						{/* 停止ボタン */}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={onStop}
+									disabled={!isThinking}
+									className="
+										h-12 w-12 md:h-11 md:w-11
+										touch-manipulation
+									"
+								>
+									<SquareSlash className="h-5 w-5 md:h-4 md:w-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>{t("stopGeneration")}</p>
+							</TooltipContent>
+						</Tooltip>
+					</div>
+				</TooltipProvider>
 			</div>
 		</div>
 	);
