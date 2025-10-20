@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { VoiceWaveform } from "@/features/VoiceWaveform/VoiceWaveform";
 import { useCharacterTheme } from "@/hooks/useCharacterTheme";
-import { Mic, MicOff, Send, SquareSlash } from "lucide-react";
+import { Mic, MicOff, Send, SquareSlash, Wand2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type React from "react";
 import { useTranslation } from "react-i18next";
@@ -10,11 +10,13 @@ export type ChatInputAreaProps = {
 	inputValue: string;
 	isThinking: boolean;
 	isRecording: boolean;
+	isCorrectingTypo?: boolean;
 	onInputChange: React.ChangeEventHandler<HTMLTextAreaElement>;
 	onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement>;
 	onSend: () => void;
 	onToggleRecording: () => void;
 	onStop: () => void;
+	onCorrectTypo?: () => void;
 };
 
 /**
@@ -22,22 +24,26 @@ export type ChatInputAreaProps = {
  * @param inputValue - 入力フィールドの値
  * @param isThinking - 応答中かどうかのフラグ
  * @param isRecording - 音声入力中かどうかのフラグ
+ * @param isCorrectingTypo - 誤字修正中かどうかのフラグ
  * @param onInputChange - 入力値変更時のハンドラ
  * @param onKeyDown - キー入力時のハンドラ
  * @param onSend - 送信ボタン押下時のハンドラ
  * @param onToggleRecording - 音声入力のトグルハンドラ
  * @param onStop - 音声入力停止時のハンドラ
+ * @param onCorrectTypo - 誤字修正ボタン押下時のハンドラ
  */
 
 export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	inputValue,
 	isThinking,
 	isRecording,
+	isCorrectingTypo = false,
 	onInputChange,
 	onKeyDown,
 	onSend,
 	onToggleRecording,
 	onStop,
+	onCorrectTypo,
 }) => {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const { t } = useTranslation("chat");
@@ -103,14 +109,38 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 				{/* ボタンコンテナ */}
 				<div className="flex gap-2 flex-shrink-0">
+					{/* 誤字修正ボタン */}
+					{onCorrectTypo && (
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={onCorrectTypo}
+							disabled={
+								isThinking ||
+								isRecording ||
+								isCorrectingTypo ||
+								!inputValue.trim()
+							}
+							className={`
+								flex-shrink-0
+								h-12 w-12 md:h-11 md:w-11
+								touch-manipulation
+								${isCorrectingTypo ? "animate-pulse" : ""}
+							`}
+							title={isCorrectingTypo ? t("correctingTypo") : t("correctTypo")}
+						>
+							<Wand2 className="h-5 w-5 md:h-4 md:w-4" />
+						</Button>
+					)}
+
 					{/* マイクボタン */}
 					<Button
 						variant={isRecording ? "destructive" : "outline"}
 						size="icon"
 						onClick={onToggleRecording}
 						className={`
-							flex-shrink-0 
-							h-12 w-12 md:h-11 md:w-11 
+							flex-shrink-0
+							h-12 w-12 md:h-11 md:w-11
 							touch-manipulation
 							${isRecording ? "animate-pulse" : ""}
 						`}

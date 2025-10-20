@@ -27,6 +27,7 @@ import {
 import { useResponsive } from "../../hooks/useResponsive";
 
 import type { ConversationMessage } from "../../services/llmService";
+import { correctTypo } from "../../services/openaiService";
 
 import type { VRMWrapperHandle } from "../VRM/VRMWrapper/VRMWrapper";
 
@@ -48,6 +49,7 @@ export const ChatInterface = forwardRef<
 	const [isStreamingMode, setIsStreamingMode] = useAtom(isStreamingModeAtom);
 	const [input, setInput] = useState("");
 	const [isRecording] = useAtom(isRecordingAtom);
+	const [isCorrectingTypo, setIsCorrectingTypo] = useState(false);
 	const toggleRecording = useSetAtom(toggleRecordingAtom);
 	const addMessage = useSetAtom(addMessageAtom);
 	const resetChat = useSetAtom(resetChatAtom);
@@ -144,6 +146,25 @@ export const ChatInterface = forwardRef<
 		setIsStreamingMode((prev) => !prev);
 	};
 
+	const handleCorrectTypo = async () => {
+		const trimmed = input.trim();
+		if (!trimmed || isCorrectingTypo) return;
+
+		setIsCorrectingTypo(true);
+
+		try {
+			const result = await correctTypo(trimmed);
+			if (result.has_changes) {
+				setInput(result.corrected_text);
+			}
+		} catch (error) {
+			console.error("Typo correction failed:", error);
+			// エラーは表示せず、静かに失敗する
+		} finally {
+			setIsCorrectingTypo(false);
+		}
+	};
+
 	const commonProps = {
 		messages,
 		inputValue: input,
@@ -163,6 +184,7 @@ export const ChatInterface = forwardRef<
 		inputValue: input,
 		isThinking: chatStreaming.state.isLoading,
 		isRecording,
+		isCorrectingTypo,
 		onInputChange: handleInputChange,
 		onKeyDown: handleKeyDown,
 		onSend: handleSend,
@@ -170,6 +192,7 @@ export const ChatInterface = forwardRef<
 		onReset: handleReset,
 		onToggleRecording: handleToggleRecording,
 		onStop: chatStreaming.stopGeneration,
+		onCorrectTypo: handleCorrectTypo,
 		messagesEndRef,
 	};
 
