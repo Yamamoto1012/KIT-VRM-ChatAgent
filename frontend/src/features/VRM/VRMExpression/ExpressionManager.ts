@@ -40,6 +40,7 @@ export class ExpressionManager {
 	private lastMicroExpressionTime = 0;
 	private availableExpressions: string[] = [];
 	private isThinking = false; // 思考中フラグ
+	private isGreetingMode = false; // グリーティングモードフラグ
 	private sentimentExpressionBeforeLipSync: {
 		preset: ExpressionPreset | null;
 		weight: number;
@@ -323,30 +324,36 @@ export class ExpressionManager {
 		if (!this.vrm) return;
 
 		if (active && !this.isLipSyncActive) {
-			// リップシンク開始時：現在の感情表情を保存し、weightを下げる
-			this.sentimentExpressionBeforeLipSync = {
-				preset: this.currentExpression,
-				weight: this.currentWeight,
-			};
+			// グリーティングモード中は表情の重み調整をスキップ
+			if (!this.isGreetingMode) {
+				// リップシンク開始時：現在の感情表情を保存し、weightを下げる
+				this.sentimentExpressionBeforeLipSync = {
+					preset: this.currentExpression,
+					weight: this.currentWeight,
+				};
 
-			// 感情表情のweightを30%に下げる（目や眉の表情は残しつつ、口の動きを許容）
-			if (
-				this.currentExpression !== "neutral" &&
-				BASIC_EXPRESSIONS.includes(this.currentExpression)
-			) {
-				safeSetExpression(this.vrm, this.currentExpression, 0.3);
+				// 目や眉の表情は残しつつ、口の動きを許容
+				if (
+					this.currentExpression !== "neutral" &&
+					BASIC_EXPRESSIONS.includes(this.currentExpression)
+				) {
+					safeSetExpression(this.vrm, this.currentExpression, 0.3);
+				}
 			}
 		} else if (!active && this.isLipSyncActive) {
 			// リップシンク終了時：リップシンク表情をリセットし、感情表情を復元
 			this.resetLipSyncExpressions();
 
-			// 保存していた感情表情を復元
-			if (this.sentimentExpressionBeforeLipSync.preset) {
-				safeSetExpression(
-					this.vrm,
-					this.sentimentExpressionBeforeLipSync.preset,
-					this.sentimentExpressionBeforeLipSync.weight,
-				);
+			// グリーティングモード中は表情復元をスキップ
+			if (!this.isGreetingMode) {
+				// 保存していた感情表情を復元
+				if (this.sentimentExpressionBeforeLipSync.preset) {
+					safeSetExpression(
+						this.vrm,
+						this.sentimentExpressionBeforeLipSync.preset,
+						this.sentimentExpressionBeforeLipSync.weight,
+					);
+				}
 			}
 		}
 
@@ -485,6 +492,11 @@ export class ExpressionManager {
 		if (!this.vrm) return false;
 
 		const { enableRandomVariation = true, forceUpdate = false } = options;
+
+		// グリーティングモード中は感情による表情変更をスキップ
+		if (this.isGreetingMode) {
+			return false;
+		}
 
 		// 同じ感情の場合はスキップ
 		if (!forceUpdate && this.currentSentiment === sentiment) {
@@ -984,6 +996,11 @@ export class ExpressionManager {
 			return;
 		}
 
+		// グリーティングモード中はマイクロ表情を完全に抑制
+		if (this.isGreetingMode) {
+			return;
+		}
+
 		// リップシンク中やセンチメント表情が設定されている場合は控えめに
 		let adjustedWeight = weight;
 
@@ -1034,5 +1051,35 @@ export class ExpressionManager {
 				`🎭 マイクロ表情トリガー: ${preset} (${adjustedWeight}) over ${baseExpression} (${baseWeight}) - ${duration}ms`,
 			);
 		}
+	}
+
+	/**
+	 * グリーティングモードを開始する
+	 */
+	startGreetingMode(): void {
+		if (!this.vrm) return;
+
+		this.isGreetingMode = true;
+
+		// 目元を mild_positive に固定
+		this.setExpression("happy", 0.6);
+	}
+
+	/**
+	 * グリーティングモードを終了する
+	 * 通常の表情制御に戻す
+	 */
+	endGreetingMode(): void {
+		this.isGreetingMode = false;
+
+		// 表情をリセット
+		this.resetAllExpressions();
+	}
+
+	/**
+	 * グリーティングモード中かどうかを取得
+	 */
+	isInGreetingMode(): boolean {
+		return this.isGreetingMode;
 	}
 }

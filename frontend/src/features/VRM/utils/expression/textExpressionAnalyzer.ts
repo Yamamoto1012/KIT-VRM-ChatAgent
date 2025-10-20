@@ -36,31 +36,31 @@ const EXPRESSION_KEYWORDS = {
 			"素晴らしい",
 			"良い",
 		],
-		weight: 0.6,
+		weight: 0.15,
 		duration: 1200,
 		priority: 3,
 	},
 	surprised: {
 		keywords: ["え", "まさか", "びっくり", "本当", "すごい", "驚き"],
-		weight: 0.5,
+		weight: 0.12,
 		duration: 800,
 		priority: 2,
 	},
 	sad: {
 		keywords: ["残念", "ごめん", "申し訳", "悲しい", "困", "辛い"],
-		weight: 0.4,
+		weight: 0.1,
 		duration: 1000,
 		priority: 2,
 	},
 	angry: {
 		keywords: ["怒", "許せない", "腹が立つ", "ムカつ"],
-		weight: 0.5,
+		weight: 0.12,
 		duration: 1200,
 		priority: 3,
 	},
 	relaxed: {
 		keywords: ["リラックス", "落ち着", "安心", "ほっと"],
-		weight: 0.4,
+		weight: 0.1,
 		duration: 1500,
 		priority: 1,
 	},
@@ -71,7 +71,7 @@ const EXPRESSION_KEYWORDS = {
  */
 const THOUGHTFUL_CONJUNCTIONS = {
 	keywords: ["でも", "しかし", "ただ", "けれども", "しかしながら", "とはいえ"],
-	weight: 0.35,
+	weight: 0.08,
 	duration: 1000,
 	priority: 2,
 };
@@ -81,7 +81,7 @@ const THOUGHTFUL_CONJUNCTIONS = {
  */
 const QUESTION_MARK_EXPRESSION = {
 	type: "surprised" as ExpressionPreset,
-	weight: 0.4,
+	weight: 0.1,
 	duration: 800,
 	priority: 3,
 };
@@ -91,7 +91,7 @@ const QUESTION_MARK_EXPRESSION = {
  */
 const EXCLAMATION_MARK_EXPRESSION = {
 	type: "happy" as ExpressionPreset,
-	weight: 0.5,
+	weight: 0.12,
 	duration: 600,
 	priority: 3,
 };
