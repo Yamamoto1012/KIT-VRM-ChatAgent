@@ -13,6 +13,7 @@ from routers import (
     greeting_trigger,
     health,
     llm,
+    openai,
     sentiment,
     speech,
     websocket,
@@ -85,6 +86,7 @@ def create_application() -> FastAPI:
     app.include_router(speech.router, prefix="", tags=["speech"])
     app.include_router(dictionary.router, prefix="", tags=["dictionary"])
     app.include_router(llm.router, prefix="/api/llm", tags=["llm"])
+    app.include_router(openai.router, prefix="", tags=["openai"])
     app.include_router(sentiment.router, prefix="", tags=["sentiment"])
     app.include_router(websocket.router, prefix="", tags=["websocket"])
     app.include_router(greeting_trigger.router, prefix="", tags=["greeting-trigger"])
