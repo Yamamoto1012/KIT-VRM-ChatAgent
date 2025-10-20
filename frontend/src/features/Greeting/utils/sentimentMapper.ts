@@ -46,7 +46,6 @@ export const mapToSentimentCategory = (
 
 /**
  * グリーティング用の感情マッピング
- * グリーティングは基本的にポジティブな内容が多いため、より表現力豊かなマッピングを提供
  *
  * @param sentiment - バックエンドから受信した感情文字列
  * @returns SentimentCategory型の感情カテゴリ
@@ -54,30 +53,6 @@ export const mapToSentimentCategory = (
 export const mapGreetingSentimentToCategory = (
 	sentiment: string | undefined,
 ): SentimentCategory => {
-	// グリーティングテキスト「きょんさん、こんにちは。AI 沢みのりです。実際にお会いすると、素敵な笑顔ですね。」は
-	// 温かい挨拶とポジティブな内容を含むため、positiveはstrong_positiveにマッピング
-	if (!sentiment) {
-		return "mild_positive"; // デフォルトは軽いポジティブ
-	}
-
-	const normalizedSentiment = sentiment.toLowerCase().trim();
-
-	// グリーティング用の特別なマッピング（通常より表情を豊かに）
-	const greetingMapping: Record<string, SentimentCategory> = {
-		positive: "strong_positive", // グリーティングでは強めのポジティブ表情
-		"very positive": "strong_positive",
-		strong_positive: "strong_positive",
-		mild_positive: "mild_positive",
-		happy: "strong_positive",
-		joy: "strong_positive",
-
-		negative: "neutral", // グリーティングでネガティブは控えめに
-		neutral: "mild_positive", // グリーティングのneutralも軽くポジティブに
-
-		// その他はデフォルトマッピングを使用
-	};
-
-	return (
-		greetingMapping[normalizedSentiment] || mapToSentimentCategory(sentiment)
-	);
+	// 通常の感情マッピング
+	return mapToSentimentCategory(sentiment);
 };
