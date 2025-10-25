@@ -118,7 +118,6 @@ export default function App() {
 					{showMediaPipeDetection && isMediaPipeEnabled && (
 						<div className="fixed bottom-24 right-4 z-50 max-w-md">
 							<MediaPipeDetection
-								expressionManager={vrmWrapperRef.current?.getExpressionManager?.()}
 								autoStart={isMediaPipeEnabled}
 								showUI={showMediaPipeDetection}
 								enableVRMReaction={true}
