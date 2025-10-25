@@ -3,8 +3,7 @@
  * ExpressionManagerクラスの機能を関数型パターンで再実装
  */
 
-import type { VRM } from "@pixiv/three-vrm";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useEffect, useRef } from "react";
 import type { SentimentCategory } from "../../../../types/sentiment";
 import {

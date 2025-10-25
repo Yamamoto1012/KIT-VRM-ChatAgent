@@ -5,10 +5,7 @@
 import type { VRM } from "@pixiv/three-vrm";
 import { atom } from "jotai";
 import type { SentimentCategory } from "../../../types/sentiment";
-import type {
-	ExpressionPreset,
-	LipSyncExpression,
-} from "../constants/vrmExpressions";
+import type { ExpressionPreset } from "../constants/vrmExpressions";
 
 // Primitive Atoms (基本状態)
 /**
