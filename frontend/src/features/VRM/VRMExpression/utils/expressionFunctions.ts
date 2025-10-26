@@ -83,9 +83,6 @@ export const setVrmExpression = (
 ): boolean => {
 	if (!vrm) return false;
 
-	// 基本表情のみリセット（リップシンクは維持）
-	resetBasicExpressions(vrm);
-
 	// 新しい表情を設定
 	return safeSetExpression(vrm, preset, weight);
 };

@@ -15,6 +15,7 @@ import { currentLanguageAtom } from "../../../store/languageAtoms";
 import { useSentiment } from "../../../hooks/useSentiment";
 import { useStreamingTTS } from "../../../hooks/useStreamingTTS";
 import { useTextToSpeech } from "../../../hooks/useTextToSpeech";
+import type { SentimentAnalysisResult } from "../../../types/sentiment";
 
 import {
 	type ConversationMessage,
@@ -166,10 +167,21 @@ export const useChatStreaming = ({
 		stopAudioPlayback,
 	]);
 
+	// センチメント分析の結果をVRMに反映する
+	const handleSentimentChange = (result: SentimentAnalysisResult) => {
+		// 感情分析結果をVRMの表情に反映
+		if (vrmWrapperRef?.current?.setExpressionBySentiment) {
+			vrmWrapperRef.current.setExpressionBySentiment(result.category, {
+				forceUpdate: true,
+			});
+		}
+	};
+
 	/** センチメント分析機能 */
 	const { analyzeSentiment } = useSentiment({
 		enabled: true,
-		enableDebugLogging: true,
+		enableDebugLogging: false,
+		onSentimentChange: handleSentimentChange,
 	});
 
 	// ===== ユーティリティ関数 =====

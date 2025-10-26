@@ -5,11 +5,11 @@ import type { VRMExpressionName } from "../constants/vrmExpressions";
  * ログレベル設定
  */
 const LOG_CONFIG = {
-	enableDetailedLogs: false, // 詳細ログは無効に戻す
-	enableSuccessLogs: false, // 成功ログは通常無効
+	enableDetailedLogs: false,
+	enableSuccessLogs: false,
 	enableWarningLogs: true, // 警告は常に表示
 	enableErrorLogs: true, // エラーは常に表示
-	enableFallbackLogs: false, // フォールバックログも無効に戻す
+	enableFallbackLogs: false,
 } as const;
 
 /**
@@ -109,7 +109,11 @@ export const safeSetExpression = (
 			return false;
 		}
 
+		// 表情が見つかった場合、重みを設定
+		// const oldWeight = expression.weight;
 		expression.weight = Math.max(0, Math.min(1, weight));
+		// const newWeight = expression.weight;
+
 		return true;
 	} catch (error) {
 		// エラーハンドリング：予期しないエラーをキャッチして継続実行

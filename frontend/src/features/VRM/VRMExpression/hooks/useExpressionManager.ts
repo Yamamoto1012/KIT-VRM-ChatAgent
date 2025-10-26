@@ -365,7 +365,10 @@ export const useExpressionManager = (): ExpressionManagerActions &
 				forceUpdate?: boolean;
 			} = {},
 		): boolean => {
-			if (!vrm) return false;
+			if (!vrm) {
+				console.warn("VRMモデルが使用できないです");
+				return false;
+			}
 
 			const { enableRandomVariation = true, forceUpdate = false } = options;
 
@@ -427,21 +430,7 @@ export const useExpressionManager = (): ExpressionManagerActions &
 				return success;
 			}
 
-			// 段階的な表情変更（スムーズなアニメーション）
-			const steps = 4;
-			const stepDuration = 250;
-
-			for (let step = 0; step < steps; step++) {
-				const timerId = setTimeout(() => {
-					const progress = step / (steps - 1);
-					const currentStepWeight = targetWeight * progress;
-
-					resetBasicExpressions(vrm);
-					setExpression(targetPreset, currentStepWeight);
-				}, step * stepDuration);
-
-				timersRef.current.set(`sentiment-animate-${step}`, timerId);
-			}
+			resetBasicExpressions(vrm);
 
 			// 自動リセット機能
 			if (autoReset && duration && duration > 0) {

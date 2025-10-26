@@ -20,7 +20,13 @@ export type VRMWrapperHandle = {
 	crossFadeAnimation: (vrmaUrl: string) => void; // モーション切り替え
 	setExpression: (preset: ExpressionPreset, weight: number) => void; // 表情設定
 	setExpressionForMotion: (motionName: string) => void; // モーションに応じた表情設定
-	setExpressionBySentiment: (category: SentimentCategory) => void; // 感情による表情設定
+	setExpressionBySentiment: (
+		category: SentimentCategory,
+		options?: {
+			enableRandomVariation?: boolean;
+			forceUpdate?: boolean;
+		},
+	) => void; // 感情による表情設定
 	triggerMicroExpression: (
 		preset: ExpressionPreset,
 		weight: number,
@@ -157,8 +163,14 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 						expressionManager.setExpressionForMotion(motionName);
 					}
 				},
-				setExpressionBySentiment: (category: SentimentCategory) => {
-					expressionManager.setExpressionBySentiment(category);
+				setExpressionBySentiment: (
+					category: SentimentCategory,
+					options?: {
+						enableRandomVariation?: boolean;
+						forceUpdate?: boolean;
+					},
+				) => {
+					expressionManager.setExpressionBySentiment(category, options);
 				},
 				triggerMicroExpression: (
 					preset: ExpressionPreset,
