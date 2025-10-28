@@ -267,8 +267,8 @@ export const useAdvancedVRMIntegration = (
 
 	// カスタム表情マッピングの適用
 	const applyCustomMapping = useCallback(
-		(detectionType: string, value: string) => {
-			let mapping;
+		(detectionType: string, value: string): string | null => {
+			let mapping: { preset: string; weight: number } | undefined;
 			switch (detectionType) {
 				case "emotion":
 					mapping = emotionMapping[value];
@@ -283,7 +283,7 @@ export const useAdvancedVRMIntegration = (
 					return null;
 			}
 
-			return mapping || null;
+			return mapping?.preset || null;
 		},
 		[emotionMapping, gestureMapping, postureMapping],
 	);

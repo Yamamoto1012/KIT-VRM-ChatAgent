@@ -51,7 +51,7 @@ class MediaPipeLogger {
 		key: string,
 		level: LogLevel,
 		message: string,
-		...args: any[]
+		...args: unknown[]
 	): void {
 		if (!this.shouldLog(level)) return;
 
@@ -62,7 +62,7 @@ class MediaPipeLogger {
 			const logMethod =
 				level === "off"
 					? null
-					: (console[level as keyof Console] as (...args: any[]) => void) ||
+					: (console[level as keyof Console] as (...args: unknown[]) => void) ||
 						console.log;
 			if (logMethod) {
 				logMethod(`[MediaPipe] ${message}`, ...args);
@@ -74,7 +74,7 @@ class MediaPipeLogger {
 	/**
 	 * デバッグログ（開発環境のみ）
 	 */
-	debug(message: string, ...args: any[]): void {
+	debug(message: string, ...args: unknown[]): void {
 		if (this.config.level === "debug") {
 			console.debug(`[MediaPipe:DEBUG] ${message}`, ...args);
 		}
@@ -83,28 +83,32 @@ class MediaPipeLogger {
 	/**
 	 * 情報ログ
 	 */
-	info(message: string, ...args: any[]): void {
+	info(message: string, ...args: unknown[]): void {
 		this.throttledLog("info", "info", message, ...args);
 	}
 
 	/**
 	 * 警告ログ
 	 */
-	warn(message: string, ...args: any[]): void {
+	warn(message: string, ...args: unknown[]): void {
 		console.warn(`[MediaPipe:WARN] ${message}`, ...args);
 	}
 
 	/**
 	 * エラーログ
 	 */
-	error(message: string, ...args: any[]): void {
+	error(message: string, ...args: unknown[]): void {
 		console.error(`[MediaPipe:ERROR] ${message}`, ...args);
 	}
 
 	/**
 	 * 検出結果ログ（設定で制御）
 	 */
-	detection(type: string, count: number, details?: any): void {
+	detection(
+		type: string,
+		count: number,
+		details?: Record<string, unknown>,
+	): void {
 		if (!this.config.enableDetectionLogging) return;
 
 		const key = `detection_${type}`;
@@ -124,7 +128,9 @@ class MediaPipeLogger {
 			this.performanceMetrics.set(metric, []);
 		}
 
-		const values = this.performanceMetrics.get(metric)!;
+		const values = this.performanceMetrics.get(metric);
+		if (!values) return;
+
 		values.push(value);
 
 		// 最新の10個の値のみ保持
@@ -154,7 +160,7 @@ class MediaPipeLogger {
 	/**
 	 * 初期化ログ
 	 */
-	init(component: string, details?: any): void {
+	init(component: string, details?: Record<string, unknown>): void {
 		this.info(`${component} initialized`, details);
 	}
 

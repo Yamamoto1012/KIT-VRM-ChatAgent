@@ -5,6 +5,15 @@ import {
 	updateMediaPipeConfigAtom,
 } from "../store/detectionAtoms";
 
+// Performance APIの型を拡張
+interface PerformanceWithMemory extends Performance {
+	memory?: {
+		usedJSHeapSize: number;
+		totalJSHeapSize: number;
+		jsHeapSizeLimit: number;
+	};
+}
+
 export interface PerformanceMetrics {
 	fps: number;
 	processingTime: number; // ミリ秒
@@ -382,12 +391,18 @@ export const usePerformanceOptimization = (
 
 	// Expose frame timing for external use
 	useEffect(() => {
-		(window as any).__mediapipe_record_frame_timing = recordFrameTiming;
-		(window as any).__mediapipe_record_dropped_frame = recordDroppedFrame;
+		interface WindowWithMediaPipe extends Window {
+			__mediapipe_record_frame_timing?: typeof recordFrameTiming;
+			__mediapipe_record_dropped_frame?: typeof recordDroppedFrame;
+		}
+		const windowWithMediaPipe = window as WindowWithMediaPipe;
+
+		windowWithMediaPipe.__mediapipe_record_frame_timing = recordFrameTiming;
+		windowWithMediaPipe.__mediapipe_record_dropped_frame = recordDroppedFrame;
 
 		return () => {
-			(window as any).__mediapipe_record_frame_timing = undefined;
-			(window as any).__mediapipe_record_dropped_frame = undefined;
+			windowWithMediaPipe.__mediapipe_record_frame_timing = undefined;
+			windowWithMediaPipe.__mediapipe_record_dropped_frame = undefined;
 		};
 	}, [recordFrameTiming, recordDroppedFrame]);
 
@@ -435,9 +450,9 @@ export const useMemoryLeakDetector = (threshold = 100) => {
 
 	useEffect(() => {
 		const checkMemory = () => {
-			if ("memory" in performance) {
-				const current =
-					(performance as any).memory.usedJSHeapSize / (1024 * 1024);
+			const perf = performance as PerformanceWithMemory;
+			if (perf.memory) {
+				const current = perf.memory.usedJSHeapSize / (1024 * 1024);
 
 				if (baselineRef.current === 0) {
 					baselineRef.current = current;

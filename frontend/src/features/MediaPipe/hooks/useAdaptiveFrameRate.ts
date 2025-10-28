@@ -3,7 +3,7 @@
  * デバイス性能とリアルタイムパフォーマンスに基づいてFPSを動的調整
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { log } from "../utils/logger";
 
 export interface DeviceCapabilities {
@@ -54,9 +54,13 @@ const DEFAULT_CONFIG: AdaptiveFrameRateConfig = {
 	adjustmentThreshold: 0.2, // 20%の性能変化で調整
 };
 
+interface NavigatorWithMemory extends Navigator {
+	deviceMemory?: number;
+}
+
 // デバイス性能を検出
 const detectDeviceCapabilities = (): DeviceCapabilities => {
-	const navigator = window.navigator as any;
+	const navigator = window.navigator as NavigatorWithMemory;
 
 	// CPU情報
 	const cpuCores = navigator.hardwareConcurrency || 4;
@@ -102,7 +106,10 @@ const detectDeviceCapabilities = (): DeviceCapabilities => {
 export const useAdaptiveFrameRate = (
 	config: Partial<AdaptiveFrameRateConfig> = {},
 ): UseAdaptiveFrameRateReturn => {
-	const fullConfig = { ...DEFAULT_CONFIG, ...config };
+	const fullConfig = useMemo(
+		() => ({ ...DEFAULT_CONFIG, ...config }),
+		[config],
+	);
 
 	// 状態管理
 	const [currentFPS, setCurrentFPS] = useState(fullConfig.targetFPS);
@@ -153,7 +160,7 @@ export const useAdaptiveFrameRate = (
 			optimalFPS,
 			config: fullConfig,
 		});
-	}, [fullConfig.maxFPS, fullConfig.targetFPS, deviceCapabilities.maxFPS]);
+	}, [fullConfig, deviceCapabilities]);
 
 	// パフォーマンス履歴の管理
 	const addPerformanceData = useCallback((metrics: PerformanceMetrics) => {

@@ -3,7 +3,7 @@
  * 連続するフレームでの類似結果をキャッシュして処理負荷を削減
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type {
 	FaceDetection,
 	HandDetection,
@@ -185,10 +185,13 @@ const calculateSimilarity = (
 };
 
 export const useDetectionCache = (config: Partial<CacheConfig> = {}) => {
-	const fullConfig = { ...DEFAULT_CONFIG, ...config };
+	const fullConfig = useMemo(
+		() => ({ ...DEFAULT_CONFIG, ...config }),
+		[config],
+	);
 
 	// キャッシュストレージ（WeakMapは使用せず、明示的な管理）
-	const cacheRef = useRef<Map<string, CacheEntry<any>>>(new Map());
+	const cacheRef = useRef<Map<string, CacheEntry<DetectionResult>>>(new Map());
 	const statisticsRef = useRef<CacheStatistics>({
 		totalQueries: 0,
 		cacheHits: 0,
@@ -303,7 +306,7 @@ export const useDetectionCache = (config: Partial<CacheConfig> = {}) => {
 
 			return null;
 		},
-		[fullConfig.maxAge, fullConfig.similarityThreshold, generateCacheKey],
+		[fullConfig, generateCacheKey],
 	);
 
 	// キャッシュへの保存
@@ -420,10 +423,13 @@ export const useDetectionCache = (config: Partial<CacheConfig> = {}) => {
 	}, []);
 
 	// 設定の更新
-	const updateConfig = useCallback((newConfig: Partial<CacheConfig>) => {
-		Object.assign(fullConfig, newConfig);
-		log.debug("Cache config updated", newConfig);
-	}, []);
+	const updateConfig = useCallback(
+		(newConfig: Partial<CacheConfig>) => {
+			Object.assign(fullConfig, newConfig);
+			log.debug("Cache config updated", newConfig);
+		},
+		[fullConfig],
+	);
 
 	return {
 		getCachedOrDetect,

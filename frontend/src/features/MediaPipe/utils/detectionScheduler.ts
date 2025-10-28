@@ -220,9 +220,15 @@ export class DetectionScheduler {
 		type: DetectionType,
 		updates: Partial<DetectionPriority>,
 	): void {
-		const configKey = `${type}Detection` as keyof DetectionSchedulerConfig;
-		const currentConfig = this.config[configKey] as DetectionPriority;
-		(this.config as any)[configKey] = { ...currentConfig, ...updates };
+		const configKey = `${type}Detection` as
+			| "faceDetection"
+			| "handDetection"
+			| "poseDetection";
+		const currentConfig = this.config[configKey];
+		this.config[configKey] = {
+			...currentConfig,
+			...updates,
+		};
 
 		log.debug("Detection config updated", { type, updates });
 	}

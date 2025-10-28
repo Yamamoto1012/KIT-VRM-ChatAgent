@@ -12,6 +12,14 @@ import { qualityManager } from "../utils/qualityManager";
 import { useAdaptiveFrameRate } from "./useAdaptiveFrameRate";
 import { useDetectionCache } from "./useDetectionCache";
 
+interface PerformanceWithMemory extends Performance {
+	memory?: {
+		usedJSHeapSize: number;
+		totalJSHeapSize: number;
+		jsHeapSizeLimit: number;
+	};
+}
+
 export interface UserDetectionConfig {
 	fpsLimit?: number;
 	enableFaceDetection?: boolean;
@@ -139,6 +147,10 @@ export const useUserDetection = (
 	const cameraStateRef = useRef(camera.state);
 	const adaptiveFrameRateRef = useRef(adaptiveFrameRate);
 
+	// detectionCacheとcameraのメソッド用ref
+	const detectionCacheRef = useRef(detectionCache);
+	const cameraRef = useRef(camera);
+
 	// Refの値を最新に保つ
 	useEffect(() => {
 		enableFaceDetectionRef.current = enableFaceDetection;
@@ -149,6 +161,8 @@ export const useUserDetection = (
 		poseDetectionRef.current = poseDetection;
 		cameraStateRef.current = camera.state;
 		adaptiveFrameRateRef.current = adaptiveFrameRate;
+		detectionCacheRef.current = detectionCache;
+		cameraRef.current = camera;
 	});
 
 	const detectLoop = useCallback(() => {
@@ -188,11 +202,13 @@ export const useUserDetection = (
 					enableFaceDetectionRef.current &&
 					faceDetectionRef.current.isInitialized
 				) {
-					const { result: faces, fromCache } = detectionCache.getCachedOrDetect(
-						"face",
-						() => faceDetectionRef.current.detect(videoElement, safeTimestamp),
-						safeTimestamp,
-					);
+					const { result: faces, fromCache } =
+						detectionCacheRef.current.getCachedOrDetect(
+							"face",
+							() =>
+								faceDetectionRef.current.detect(videoElement, safeTimestamp),
+							safeTimestamp,
+						);
 					detectionResults.faces = faces?.length || 0;
 					cacheHits.faces = fromCache;
 					detectionCount++;
@@ -203,11 +219,13 @@ export const useUserDetection = (
 					enableHandDetectionRef.current &&
 					handDetectionRef.current.isInitialized
 				) {
-					const { result: hands, fromCache } = detectionCache.getCachedOrDetect(
-						"hand",
-						() => handDetectionRef.current.detect(videoElement, safeTimestamp),
-						safeTimestamp,
-					);
+					const { result: hands, fromCache } =
+						detectionCacheRef.current.getCachedOrDetect(
+							"hand",
+							() =>
+								handDetectionRef.current.detect(videoElement, safeTimestamp),
+							safeTimestamp,
+						);
 					detectionResults.hands = hands?.length || 0;
 					cacheHits.hands = fromCache;
 					detectionCount++;
@@ -218,11 +236,13 @@ export const useUserDetection = (
 					enablePoseDetectionRef.current &&
 					poseDetectionRef.current.isInitialized
 				) {
-					const { result: poses, fromCache } = detectionCache.getCachedOrDetect(
-						"pose",
-						() => poseDetectionRef.current.detect(videoElement, safeTimestamp),
-						safeTimestamp,
-					);
+					const { result: poses, fromCache } =
+						detectionCacheRef.current.getCachedOrDetect(
+							"pose",
+							() =>
+								poseDetectionRef.current.detect(videoElement, safeTimestamp),
+							safeTimestamp,
+						);
 					detectionResults.poses = poses?.length || 0;
 					cacheHits.poses = fromCache;
 					detectionCount++;
@@ -268,20 +288,20 @@ export const useUserDetection = (
 					);
 
 					// アダプティブフレームレート制御にパフォーマンスメトリクスを更新
+					const perf = performance as PerformanceWithMemory;
 					adaptiveFrameRateRef.current.updatePerformance({
 						currentFPS: newFps,
 						averageProcessingTime: processingTime,
 						frameDropRate: frameDropRate,
 						// メモリ使用量は概算値
-						memoryUsage:
-							(performance as any).memory?.usedJSHeapSize / (1024 * 1024) || 0,
+						memoryUsage: (perf.memory?.usedJSHeapSize ?? 0) / (1024 * 1024),
 					});
 
 					// スケジューラー統計情報
 					const schedulerStats = detectionScheduler.getStatistics();
 
 					// キャッシュ統計情報
-					const cacheStats = detectionCache.updateStatistics();
+					const cacheStats = detectionCacheRef.current.updateStatistics();
 
 					// 品質管理システムにパフォーマンス情報を送信
 					qualityManager.updatePerformance(processingTime, newFps);
@@ -443,7 +463,7 @@ export const useUserDetection = (
 		}));
 
 		// カメラも停止
-		camera.stopCamera();
+		cameraRef.current.stopCamera();
 
 		log.dispose("User detection");
 	}, []); // 依存配列を空にして再生成を防ぐ
@@ -499,7 +519,7 @@ export const useUserDetection = (
 			isActiveRef.current = false;
 			isInitializedRef.current = false;
 			hasAutoStartedRef.current = false;
-			camera.stopCamera();
+			cameraRef.current.stopCamera();
 		};
 	}, []); // 依存配列を空にして安定化
 
