@@ -59,9 +59,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@eslint/js": "^9.21.0",
-		"@tanstack/eslint-plugin-query": "^5.68.0",
 		"@tanstack/react-query-devtools": "^5.81.5",
-		"@tanstack/react-router-devtools": "^1.114.23",
 		"@tanstack/router-plugin": "^1.114.23",
 		"@testing-library/user-event": "^14.6.1",
 		"@types/node": "^22.13.10",
