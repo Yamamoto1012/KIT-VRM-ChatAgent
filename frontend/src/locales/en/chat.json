@@ -45,5 +45,7 @@
 	"correctTypo": "Correct Typo",
 	"correctingTypo": "Correcting...",
 	"typoCorrectionError": "Failed to correct typo",
-	"typoCorrectionSuccess": "Corrected"
+	"typoCorrectionSuccess": "Corrected",
+	"welcomeMessage": "Welcome to Kanazawa Institute of Technology!!",
+	"welcomePrompt": "Feel free to ask me anything!!"
 }

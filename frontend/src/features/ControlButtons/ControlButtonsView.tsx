@@ -95,6 +95,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 	onMenuOpenChange,
 }) => {
 	const { t } = useTranslation("chat");
+	const { t: tMediapipe } = useTranslation("mediapipe");
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	const menuButtons = [
@@ -122,7 +123,9 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 		{
 			id: "mediapipe",
 			icon: isMediaPipeEnabled ? Camera : CameraOff,
-			label: isMediaPipeEnabled ? "ユーザー検出ON" : "ユーザー検出OFF",
+			label: isMediaPipeEnabled
+				? tMediapipe("userDetectionOn")
+				: tMediapipe("userDetectionOff"),
 			onClick: onToggleMediaPipe,
 			isActive: isMediaPipeEnabled,
 		},

@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { atom } from "jotai";
 
 /**
@@ -28,13 +29,15 @@ export type AudioStreamingState = {
 	audioError: string | null;
 };
 
+const getInitialMessages = (): Message[] => [
+	{ id: 1, text: i18next.t("chat:welcomeMessage"), isUser: false },
+	{ id: 2, text: i18next.t("chat:welcomePrompt"), isUser: false },
+];
+
 /**
  * 初期メッセージ - アプリケーション起動時の最初の挨拶メッセージ
  */
-const initialMessages: Message[] = [
-	{ id: 1, text: "金沢工業大学へようこそ!!", isUser: false },
-	{ id: 2, text: "なんでも質問してください!!", isUser: false },
-];
+const initialMessages: Message[] = getInitialMessages();
 
 /**
  * チャットメッセージを管理するアトム
@@ -150,7 +153,7 @@ export const addMessageWithIdAtom = atom(null, (get, set, message: Message) => {
  * チャットをリセットするアトム
  */
 export const resetChatAtom = atom(null, (_get, set) => {
-	set(messagesAtom, initialMessages);
+	set(messagesAtom, getInitialMessages());
 	set(isThinkingAtom, false);
 	set(audioStreamingStateAtom, {
 		isStreamingActive: false,
