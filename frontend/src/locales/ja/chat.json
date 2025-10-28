@@ -45,5 +45,7 @@
 	"correctTypo": "誤字修正",
 	"correctingTypo": "修正中...",
 	"typoCorrectionError": "誤字修正に失敗しました",
-	"typoCorrectionSuccess": "修正しました"
+	"typoCorrectionSuccess": "修正しました",
+	"welcomeMessage": "金沢工業大学へようこそ!!",
+	"welcomePrompt": "なんでも質問してください!!"
 }

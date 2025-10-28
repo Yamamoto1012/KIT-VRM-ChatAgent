@@ -12,6 +12,7 @@ import {
 	VideoOff,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	DetectionStatus,
 	DetectionStatusCompact,
@@ -84,6 +85,7 @@ export const MediaPipeDetectionView = ({
 	// Props
 	className = "",
 }: MediaPipeDetectionViewProps) => {
+	const { t } = useTranslation("mediapipe");
 	const videoContainerRef = useRef<HTMLDivElement>(null);
 	const hiddenVideoContainerRef = useRef<HTMLDivElement>(null);
 
@@ -174,11 +176,9 @@ export const MediaPipeDetectionView = ({
 						<div className="flex items-center justify-between">
 							<div>
 								<h2 className="text-base font-semibold text-gray-800">
-									MediaPipe ユーザー検出
+									{t("title")}
 								</h2>
-								<p className="text-xs text-gray-600">
-									AIアバターとのインタラクション
-								</p>
+								<p className="text-xs text-gray-600">{t("description")}</p>
 							</div>
 							<DetectionStatusCompact />
 						</div>
@@ -195,10 +195,10 @@ export const MediaPipeDetectionView = ({
 										className="w-full h-auto max-h-48"
 									/>
 									<div className="flex items-center justify-between px-2 py-1 bg-gray-800">
-										<p className="text-xs text-gray-300">カメラ</p>
+										<p className="text-xs text-gray-300">{t("camera")}</p>
 										<div className="flex items-center gap-1">
 											<Circle className="w-2 h-2 fill-green-400 text-green-400 animate-pulse" />
-											<p className="text-xs text-green-400">ライブ</p>
+											<p className="text-xs text-green-400">{t("live")}</p>
 										</div>
 									</div>
 								</div>
@@ -219,7 +219,7 @@ export const MediaPipeDetectionView = ({
 											className="bg-green-600 hover:bg-green-700 text-white h-8 gap-2"
 										>
 											<Video className="w-4 h-4" />
-											検出開始
+											{t("startDetection")}
 										</Button>
 									) : (
 										<Button
@@ -227,7 +227,7 @@ export const MediaPipeDetectionView = ({
 											className="bg-red-600 hover:bg-red-700 text-white h-8 gap-2"
 										>
 											<VideoOff className="w-4 h-4" />
-											検出停止
+											{t("stopDetection")}
 										</Button>
 									)}
 									<Button
@@ -236,7 +236,7 @@ export const MediaPipeDetectionView = ({
 										className="text-gray-600 hover:text-gray-800 h-8 gap-2"
 									>
 										<RotateCcw className="w-4 h-4" />
-										リセット
+										{t("reset")}
 									</Button>
 
 									{/* カメラトグル */}
@@ -248,14 +248,14 @@ export const MediaPipeDetectionView = ({
 													: "fill-gray-400 text-gray-400"
 											}`}
 										/>
-										<span className="text-xs text-gray-600">カメラ</span>
+										<span className="text-xs text-gray-600">{t("camera")}</span>
 										<Button
 											variant={settings.cameraEnabled ? "default" : "outline"}
 											size="sm"
 											onClick={() => handleToggleSetting("cameraEnabled")}
 											className="h-7 text-xs"
 										>
-											{settings.cameraEnabled ? "ON" : "OFF"}
+											{settings.cameraEnabled ? t("on") : t("off")}
 										</Button>
 									</div>
 								</div>
@@ -267,7 +267,7 @@ export const MediaPipeDetectionView = ({
 											<div className="flex items-center gap-1 mb-1">
 												<UserCircle className="w-3 h-3 text-blue-700" />
 												<span className="text-xs font-medium text-blue-800">
-													顔
+													{t("face")}
 												</span>
 											</div>
 											<Button
@@ -280,7 +280,7 @@ export const MediaPipeDetectionView = ({
 												}
 												className="h-6 px-3 text-xs w-full"
 											>
-												{settings.faceDetectionEnabled ? "ON" : "OFF"}
+												{settings.faceDetectionEnabled ? t("on") : t("off")}
 											</Button>
 										</div>
 
@@ -288,7 +288,7 @@ export const MediaPipeDetectionView = ({
 											<div className="flex items-center gap-1 mb-1">
 												<Hand className="w-3 h-3 text-green-700" />
 												<span className="text-xs font-medium text-green-800">
-													手
+													{t("hand")}
 												</span>
 											</div>
 											<Button
@@ -301,7 +301,7 @@ export const MediaPipeDetectionView = ({
 												}
 												className="h-6 px-3 text-xs w-full"
 											>
-												{settings.handDetectionEnabled ? "ON" : "OFF"}
+												{settings.handDetectionEnabled ? t("on") : t("off")}
 											</Button>
 										</div>
 
@@ -309,7 +309,7 @@ export const MediaPipeDetectionView = ({
 											<div className="flex items-center gap-1 mb-1">
 												<Users className="w-3 h-3 text-purple-700" />
 												<span className="text-xs font-medium text-purple-800">
-													姿勢
+													{t("pose")}
 												</span>
 											</div>
 											<Button
@@ -322,7 +322,7 @@ export const MediaPipeDetectionView = ({
 												}
 												className="h-6 px-3 text-xs w-full"
 											>
-												{settings.poseDetectionEnabled ? "ON" : "OFF"}
+												{settings.poseDetectionEnabled ? t("on") : t("off")}
 											</Button>
 										</div>
 									</div>
@@ -331,9 +331,7 @@ export const MediaPipeDetectionView = ({
 								{/* プライバシー情報 */}
 								<div className="flex items-center gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded px-2 py-1">
 									<Shield className="w-3 h-3 text-blue-600" />
-									<span>
-										全ての処理はブラウザ内で実行され、データは外部送信されません
-									</span>
+									<span>{t("privacyNotice")}</span>
 								</div>
 							</div>
 						</Card>
@@ -345,7 +343,7 @@ export const MediaPipeDetectionView = ({
 							{/* 検出状況 */}
 							<Card className="p-3 bg-white/90 backdrop-blur-sm border border-gray-200">
 								<h3 className="text-sm font-medium text-gray-800 mb-2">
-									検出状況
+									{t("detectionStatus")}
 								</h3>
 								<div className="grid grid-cols-3 gap-2">
 									<div
@@ -357,7 +355,7 @@ export const MediaPipeDetectionView = ({
 									>
 										<div className="flex items-center justify-center gap-1 text-xs text-gray-600 mb-1">
 											<UserCircle className="w-3 h-3" />
-											<span>顔</span>
+											<span>{t("face")}</span>
 										</div>
 										<div
 											className={`text-xl font-bold ${
@@ -384,7 +382,7 @@ export const MediaPipeDetectionView = ({
 									>
 										<div className="flex items-center justify-center gap-1 text-xs text-gray-600 mb-1">
 											<Hand className="w-3 h-3" />
-											<span>手</span>
+											<span>{t("hand")}</span>
 										</div>
 										<div
 											className={`text-xl font-bold ${
@@ -411,7 +409,7 @@ export const MediaPipeDetectionView = ({
 									>
 										<div className="flex items-center justify-center gap-1 text-xs text-gray-600 mb-1">
 											<Users className="w-3 h-3" />
-											<span>姿勢</span>
+											<span>{t("pose")}</span>
 										</div>
 										<div
 											className={`flex items-center justify-center ${
@@ -442,7 +440,7 @@ export const MediaPipeDetectionView = ({
 								<div className="space-y-2">
 									<div className="flex items-center justify-between">
 										<h3 className="text-sm font-medium text-gray-800">
-											VRM反応
+											{t("vrmReaction")}
 										</h3>
 										<div className="flex items-center space-x-1">
 											<Circle
@@ -453,7 +451,7 @@ export const MediaPipeDetectionView = ({
 												}`}
 											/>
 											<span className="text-xs text-gray-600">
-												{vrmReaction.isReacting ? "反応中" : "待機"}
+												{vrmReaction.isReacting ? t("reacting") : t("waiting")}
 											</span>
 										</div>
 									</div>
@@ -465,7 +463,7 @@ export const MediaPipeDetectionView = ({
 											onClick={() => onManualReaction("greeting")}
 											className="text-green-600 border-green-200 hover:bg-green-50 text-xs h-7 px-2"
 										>
-											挨拶
+											{t("greeting")}
 										</Button>
 										<Button
 											variant="outline"
@@ -473,7 +471,7 @@ export const MediaPipeDetectionView = ({
 											onClick={() => onManualReaction("gesture")}
 											className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs h-7 px-2"
 										>
-											ジェスチャー
+											{t("gesture")}
 										</Button>
 										<Button
 											variant="outline"
@@ -481,15 +479,17 @@ export const MediaPipeDetectionView = ({
 											onClick={() => onManualReaction("posture")}
 											className="text-purple-600 border-purple-200 hover:bg-purple-50 text-xs h-7 px-2"
 										>
-											姿勢
+											{t("posture")}
 										</Button>
 									</div>
 
 									<div className="text-xs text-gray-600">
-										<span>回数: {vrmReaction.reactionCount}</span>
+										<span>
+											{t("reactionCount")} {vrmReaction.reactionCount}
+										</span>
 										{vrmReaction.lastReactionTime > 0 && (
 											<span className="ml-2">
-												最終:{" "}
+												{t("lastReaction")}{" "}
 												{new Date(
 													vrmReaction.lastReactionTime,
 												).toLocaleTimeString()}
@@ -506,14 +506,16 @@ export const MediaPipeDetectionView = ({
 						<Card className="bg-white/90 backdrop-blur-sm border border-gray-200 max-h-[70vh] flex flex-col">
 							{/* ヘッダー（固定） */}
 							<div className="flex items-center justify-between p-3 border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-10 rounded-t-lg">
-								<h3 className="text-sm font-medium text-gray-800">詳細情報</h3>
+								<h3 className="text-sm font-medium text-gray-800">
+									{t("detailsTitle")}
+								</h3>
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={onToggleDetectionDetails}
 									className="text-xs h-6 px-2 hover:bg-gray-100"
 								>
-									閉じる ▲
+									{t("close")}
 								</Button>
 							</div>
 							{/* スクロール可能なコンテンツ */}
@@ -535,7 +537,7 @@ export const MediaPipeDetectionView = ({
 								onClick={onToggleDetectionDetails}
 								className="text-xs text-gray-600 hover:text-gray-800"
 							>
-								詳細を表示 ▼
+								{t("showDetails")}
 							</Button>
 						</div>
 					)}
@@ -545,7 +547,9 @@ export const MediaPipeDetectionView = ({
 						<Card className="p-3 bg-red-50 border border-red-200">
 							<div className="flex items-center gap-1 mb-1">
 								<Circle className="w-3 h-3 fill-red-600 text-red-600" />
-								<h3 className="text-sm font-medium text-red-800">エラー</h3>
+								<h3 className="text-sm font-medium text-red-800">
+									{t("error")}
+								</h3>
 							</div>
 							<p className="text-xs text-red-700 mb-2">{error}</p>
 							<div className="flex gap-2">
@@ -555,7 +559,7 @@ export const MediaPipeDetectionView = ({
 									onClick={onStartDetection}
 									className="border-red-200 text-red-600 hover:bg-red-50 text-xs h-7"
 								>
-									再試行
+									{t("retry")}
 								</Button>
 							</div>
 						</Card>
