@@ -53,10 +53,3 @@ export type SentimentState = {
 	error: Error | null;
 	lastAnalyzedText: string | null;
 };
-
-// 感情カテゴリから表情プリセットへのマッピング用の型
-export type EmotionMapping = {
-	preset: string; // VRM表情プリセット名
-	weight: number; // 表情の重み (0-1)
-	duration?: number; // 表情の持続時間 (ミリ秒)
-};
