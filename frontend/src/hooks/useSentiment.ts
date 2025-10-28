@@ -156,5 +156,3 @@ export const useSentiment = (
 		clearAnalysis,
 	};
 };
-
-export default useSentiment;

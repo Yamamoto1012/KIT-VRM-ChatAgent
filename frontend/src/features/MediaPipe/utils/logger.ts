@@ -227,5 +227,3 @@ export const log = {
 	fps: mediaLogger.fps.bind(mediaLogger),
 	logStats: mediaLogger.logStats.bind(mediaLogger),
 };
-
-export default mediaLogger;

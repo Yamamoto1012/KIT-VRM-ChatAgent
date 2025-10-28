@@ -87,17 +87,3 @@ export const currentSentimentStateAtom = atom((get) => ({
  * VRMが利用可能かどうか
  */
 export const isVrmAvailableAtom = atom((get) => get(vrmAtom) !== null);
-
-/**
- * デバッグ情報を取得する
- */
-export const expressionDebugInfoAtom = atom((get) => ({
-	isLipSyncActive: get(isLipSyncActiveAtom),
-	currentExpression: get(currentExpressionAtom),
-	currentWeight: get(currentWeightAtom),
-	currentSentiment: get(currentSentimentAtom),
-	vrmAvailable: get(vrmAtom) !== null,
-	isThinking: get(isThinkingAtom),
-	isGreetingMode: get(isGreetingModeAtom),
-	lastMicroExpressionTime: get(lastMicroExpressionTimeAtom),
-}));

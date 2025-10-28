@@ -116,9 +116,6 @@ export type WebSpeechRecognitionConstructor =
 	| typeof WebSpeechRecognition
 	| undefined;
 
-// ブラウザサポート検出のヘルパー関数型
-export type GetWebSpeechRecognition = () => WebSpeechRecognitionConstructor;
-
 // useVoiceChat で使用する型の再エクスポート
 export type {
 	WebSpeechRecognition,
