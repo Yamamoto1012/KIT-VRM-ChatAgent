@@ -54,12 +54,11 @@ export const useGreeting = ({
 	 */
 	const handleComplete = useCallback(() => {
 		console.log("[useGreeting] Greeting completed, resetting expressions");
-		const expressionManager = vrmWrapperRef.current?.getExpressionManager?.();
-		if (expressionManager) {
+		if (vrmWrapperRef.current?.endGreetingMode) {
 			// グリーティングモードを終了
-			expressionManager.endGreetingMode();
+			vrmWrapperRef.current.endGreetingMode();
 		} else {
-			console.warn("[useGreeting] ExpressionManager not available for reset");
+			console.warn("[useGreeting] endGreetingMode not available");
 		}
 
 		onComplete?.();
@@ -96,11 +95,9 @@ export const useGreeting = ({
 
 			// 再生中でない場合のみトリガーを処理
 			if (!isPlaying && !isLoading) {
-				const expressionManager =
-					vrmWrapperRef.current?.getExpressionManager?.();
-				if (expressionManager) {
+				if (vrmWrapperRef.current?.startGreetingMode) {
 					// グリーティングモードを開始（目元を mild_positive に固定）
-					expressionManager.startGreetingMode();
+					vrmWrapperRef.current.startGreetingMode();
 				}
 
 				// グリーティング音声を再生（リップシンクも自動的に動作）
@@ -147,13 +144,11 @@ export const useGreeting = ({
 		) {
 			// VRMが読み込まれるまで少し待つ
 			const timer = setTimeout(() => {
-				const expressionManager =
-					vrmWrapperRef.current?.getExpressionManager?.();
-				if (expressionManager) {
+				if (vrmWrapperRef.current?.startGreetingMode) {
 					hasPlayedRef.current = true;
 
 					// グリーティングモードを開始
-					expressionManager.startGreetingMode();
+					vrmWrapperRef.current.startGreetingMode();
 
 					playGreeting().catch((error) => {
 						console.error("Failed to play greeting:", error);

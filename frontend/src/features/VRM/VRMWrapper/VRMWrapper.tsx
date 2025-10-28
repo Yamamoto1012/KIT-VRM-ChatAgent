@@ -11,17 +11,24 @@ import type { AudioStreamingState } from "../../../store/chatAtoms";
 import { selectedModelConfigAtom } from "../../../store/modelAtoms";
 import { sentimentDebugAtom } from "../../../store/sentimentDebugStore";
 import type { SentimentCategory } from "../../../types/sentiment";
-import type { ExpressionManager } from "../VRMExpression/ExpressionManager";
+import { useExpressionManager } from "../VRMExpression/hooks/useExpressionManager";
 import { VRMRender } from "../VRMRender/VRMRender";
+import type { ExpressionPreset } from "../constants/vrmExpressions";
 
 export type VRMWrapperHandle = {
 	playAudio: (audioUrl: string, text?: string) => void; // 音声再生（リップシンク含む）
 	crossFadeAnimation: (vrmaUrl: string) => void; // モーション切り替え
-	setExpression?: (preset: string, weight: number) => void; // 表情設定
-	setExpressionForMotion?: (motionName: string) => void; // モーションに応じた表情設定
-	setExpressionBySentiment?: (category: SentimentCategory) => void; // 感情による表情設定
-	triggerMicroExpression?: (
-		preset: string,
+	setExpression: (preset: ExpressionPreset, weight: number) => void; // 表情設定
+	setExpressionForMotion: (motionName: string) => void; // モーションに応じた表情設定
+	setExpressionBySentiment: (
+		category: SentimentCategory,
+		options?: {
+			enableRandomVariation?: boolean;
+			forceUpdate?: boolean;
+		},
+	) => void; // 感情による表情設定
+	triggerMicroExpression: (
+		preset: ExpressionPreset,
 		weight: number,
 		duration: number,
 	) => void; // マイクロ表情トリガー
@@ -30,7 +37,13 @@ export type VRMWrapperHandle = {
 	isThinking: boolean; // 現在の思考状態
 	getLastMotion: () => string; // 現在のモーション名取得
 	restoreLastMotion: () => void; // 直前のモーションに戻す
-	getExpressionManager?: () => ExpressionManager | null | undefined; // ExpressionManagerインスタンスを取得
+	startGreetingMode: () => void; // グリーティングモード開始
+	endGreetingMode: () => void; // グリーティングモード終了
+	getCurrentExpressionState?: () => {
+		expression: ExpressionPreset;
+		weight: number;
+		isLipSyncActive: boolean;
+	}; // 現在の表情状態を取得
 };
 
 type VRMWrapperProps = {
@@ -63,6 +76,9 @@ const getRotationForDepth = (): [number, number, number] => {
 
 export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 	({ categoryDepth = 0, isMuted, onThinkingStateChange }, ref) => {
+		// 新しいuseExpressionManagerフックを使用
+		const expressionManager = useExpressionManager();
+
 		// アニメーション一時停止状態
 		const [isPaused, setIsPaused] = useState<boolean>(false);
 
@@ -75,22 +91,10 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 		// 感情分析結果の監視
 		const [sentimentDebug] = useAtom(sentimentDebugAtom);
 
-		// 表情リセット用のタイマー
-		const expressionResetTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-		// VRMRenderコンポーネントへの参照
+		// VRMRenderコンポーネントへの参照（表情制御メソッドは不要）
 		const vrmRenderRef = useRef<{
 			crossFadeAnimation?: (vrmaUrl: string) => void;
 			playAudio?: (audioUrl: string, text?: string) => void;
-			setExpression?: (preset: string, weight: number) => void;
-			setExpressionForMotion?: (motionName: string) => void;
-			setExpressionBySentiment?: (category: SentimentCategory) => void;
-			triggerMicroExpression?: (
-				preset: string,
-				weight: number,
-				duration: number,
-			) => void;
-			getExpressionManager?: () => ExpressionManager | null | undefined;
 		} | null>(null);
 
 		// 直前のモーション名を保持
@@ -99,105 +103,13 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 		// 前回の深度を追跡
 		const prevDepthRef = useRef<number>(categoryDepth);
 
-		// 感情カテゴリから表情と重みを取得する関数
-		const getExpressionForSentiment = useCallback(
-			(
-				category: SentimentCategory,
-			): { preset: string; weight: number; duration: number } => {
-				switch (category) {
-					case "strong_positive":
-						return { preset: "happy", weight: 0.6, duration: 3000 };
-					case "mild_positive":
-						return { preset: "happy", weight: 0.4, duration: 2500 };
-					case "neutral":
-						return { preset: "neutral", weight: 0.3, duration: 0 };
-					case "mild_negative":
-						return { preset: "sad", weight: 0.4, duration: 2500 };
-					case "strong_negative":
-						return { preset: "sad", weight: 0.6, duration: 3000 };
-					default:
-						return { preset: "neutral", weight: 0.3, duration: 0 };
-				}
-			},
-			[],
-		);
-
-		// スムーズな表情変更を実行する関数
-		const smoothSetExpression = useCallback(
-			(preset: string, targetWeight: number, duration: number) => {
-				if (!vrmRenderRef.current?.setExpression) return;
-
-				// 段階的に表情の重みを変更してスムーズな変化を演出
-				const steps = 5;
-				const stepDuration = 200; // 各ステップ200ms
-				let currentStep = 0;
-
-				const animateExpression = () => {
-					if (currentStep >= steps) return;
-
-					const progress = currentStep / (steps - 1);
-					const currentWeight = targetWeight * progress;
-
-					vrmRenderRef.current?.setExpression?.(preset, currentWeight);
-					currentStep++;
-
-					if (currentStep < steps) {
-						setTimeout(animateExpression, stepDuration);
-					}
-				};
-
-				animateExpression();
-
-				// 指定時間後にneutralに戻す（duration > 0の場合）
-				if (duration > 0) {
-					// 既存のタイマーをクリア
-					if (expressionResetTimerRef.current) {
-						clearTimeout(expressionResetTimerRef.current);
-					}
-
-					expressionResetTimerRef.current = setTimeout(() => {
-						// スムーズにneutralに戻す
-						const resetSteps = 3;
-						const resetStepDuration = 300;
-						let resetStep = 0;
-
-						const animateReset = () => {
-							if (resetStep >= resetSteps) return;
-
-							const progress = 1 - resetStep / (resetSteps - 1);
-							const currentWeight = targetWeight * progress;
-
-							vrmRenderRef.current?.setExpression?.(preset, currentWeight);
-							resetStep++;
-
-							if (resetStep < resetSteps) {
-								setTimeout(animateReset, resetStepDuration);
-							} else {
-								// 最後にneutralを設定
-								vrmRenderRef.current?.setExpression?.("neutral", 0.3);
-							}
-						};
-
-						animateReset();
-					}, duration);
-				}
-			},
-			[],
-		);
-
-		// 高度な感情表現を実行する関数
+		// 高度な感情表現を実行する関数（シンプル化）
 		const advancedSentimentExpression = useCallback(
 			(category: SentimentCategory) => {
-				if (vrmRenderRef.current?.setExpressionBySentiment) {
-					vrmRenderRef.current.setExpressionBySentiment(category);
-				} else {
-					// フォールバック：簡易版を使用
-					const { preset, weight, duration } =
-						getExpressionForSentiment(category);
-					smoothSetExpression(preset, weight, duration);
-				}
+				// 直接フックから呼び出し、フォールバック不要
+				expressionManager.setExpressionBySentiment(category);
 			},
-			[getExpressionForSentiment, smoothSetExpression],
+			[expressionManager],
 		);
 
 		// 感情分析結果が更新された時にVRM表情を変更
@@ -228,80 +140,93 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 		}, []);
 
 		// 親コンポーネントに公開するAPI群
-		useImperativeHandle(ref, () => ({
-			crossFadeAnimation: (vrmaUrl: string) => {
-				lastMotionRef.current = vrmaUrl;
-				if (!isPaused) {
-					crossFadeToMotion(vrmaUrl);
-				}
-			},
-			playAudio: (audioUrl: string, text?: string) => {
-				if (vrmRenderRef.current?.playAudio) {
-					vrmRenderRef.current.playAudio(audioUrl, text);
-				}
-			},
-			setExpression: (preset: string, weight: number) => {
-				if (vrmRenderRef.current?.setExpression) {
-					vrmRenderRef.current.setExpression(preset, weight);
-				}
-			},
-			setExpressionForMotion: (motionName: string) => {
-				if (!isPaused && vrmRenderRef.current?.setExpressionForMotion) {
-					vrmRenderRef.current.setExpressionForMotion(motionName);
-				}
-			},
-			setExpressionBySentiment: (category: SentimentCategory) => {
-				const { preset, weight, duration } =
-					getExpressionForSentiment(category);
-				smoothSetExpression(preset, weight, duration);
-			},
-			triggerMicroExpression: (
-				preset: string,
-				weight: number,
-				duration: number,
-			) => {
-				if (vrmRenderRef.current?.triggerMicroExpression) {
-					vrmRenderRef.current.triggerMicroExpression(preset, weight, duration);
-				}
-			},
-			startThinking: () => {
-				setIsThinking(true);
-				setIsPaused(false);
-				crossFadeToMotion("/Motion/Thinking.vrma");
-				lastMotionRef.current = "/Motion/Thinking.vrma";
-				// 思考中の表情を設定
-				if (vrmRenderRef.current?.setExpression) {
-					vrmRenderRef.current.setExpression("neutral", 0.5);
-				}
-				// ExpressionManagerに思考中であることを通知
-				const expressionManager =
-					vrmRenderRef.current?.getExpressionManager?.();
-				if (expressionManager) {
+		useImperativeHandle(
+			ref,
+			() => ({
+				crossFadeAnimation: (vrmaUrl: string) => {
+					lastMotionRef.current = vrmaUrl;
+					if (!isPaused) {
+						crossFadeToMotion(vrmaUrl);
+					}
+				},
+				playAudio: (audioUrl: string, text?: string) => {
+					if (vrmRenderRef.current?.playAudio) {
+						vrmRenderRef.current.playAudio(audioUrl, text);
+					}
+				},
+				// 表情制御は直接expressionManagerから
+				setExpression: (preset: ExpressionPreset, weight: number) => {
+					expressionManager.setExpression(preset, weight);
+				},
+				setExpressionForMotion: (motionName: string) => {
+					if (!isPaused) {
+						expressionManager.setExpressionForMotion(motionName);
+					}
+				},
+				setExpressionBySentiment: (
+					category: SentimentCategory,
+					options?: {
+						enableRandomVariation?: boolean;
+						forceUpdate?: boolean;
+					},
+				) => {
+					expressionManager.setExpressionBySentiment(category, options);
+				},
+				triggerMicroExpression: (
+					preset: ExpressionPreset,
+					weight: number,
+					duration: number,
+				) => {
+					expressionManager.triggerMicroExpression(preset, weight, duration);
+				},
+				startThinking: () => {
+					setIsThinking(true);
+					setIsPaused(false);
+					crossFadeToMotion("/Motion/Thinking.vrma");
+					lastMotionRef.current = "/Motion/Thinking.vrma";
+					// 思考中の表情を設定
+					expressionManager.setExpression("neutral", 0.5);
+					// ExpressionManagerに思考中であることを通知
 					expressionManager.setThinking(true);
-				}
-			},
-			stopThinking: () => {
-				setIsThinking(false);
-				// 思考終了時は常にStandingIdleに戻る
-				const defaultMotion = "/Motion/StandingIdle.vrma";
-				crossFadeToMotion(defaultMotion);
-				lastMotionRef.current = defaultMotion;
-				// ExpressionManagerに思考終了を通知
-				const expressionManager =
-					vrmRenderRef.current?.getExpressionManager?.();
-				if (expressionManager) {
+					onThinkingStateChange?.(true);
+				},
+				stopThinking: () => {
+					setIsThinking(false);
+					// 思考終了時は常にStandingIdleに戻る
+					const defaultMotion = "/Motion/StandingIdle.vrma";
+					crossFadeToMotion(defaultMotion);
+					lastMotionRef.current = defaultMotion;
+					// ExpressionManagerに思考終了を通知
 					expressionManager.setThinking(false);
-				}
-			},
-			isThinking,
-			getLastMotion: () => lastMotionRef.current,
-			restoreLastMotion: () => {
-				crossFadeToMotion(lastMotionRef.current);
-			},
-			getExpressionManager: () => {
-				return vrmRenderRef.current?.getExpressionManager?.();
-			},
-		}));
+					onThinkingStateChange?.(false);
+				},
+				isThinking,
+				getLastMotion: () => lastMotionRef.current,
+				restoreLastMotion: () => {
+					crossFadeToMotion(lastMotionRef.current);
+				},
+				// グリーティングモード制御
+				startGreetingMode: () => {
+					expressionManager.startGreetingMode();
+				},
+				endGreetingMode: () => {
+					expressionManager.endGreetingMode();
+				},
+				// 表情状態取得メソッド
+				getCurrentExpressionState: () => ({
+					expression: expressionManager.currentExpression,
+					weight: expressionManager.currentWeight,
+					isLipSyncActive: expressionManager.isLipSyncActive,
+				}),
+			}),
+			[
+				expressionManager,
+				isThinking,
+				isPaused,
+				crossFadeToMotion,
+				onThinkingStateChange,
+			],
+		);
 
 		// カテゴリ深度変更時の処理（モーション変更は無効化）
 		useEffect(() => {
@@ -315,15 +240,6 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 			}
 			prevDepthRef.current = categoryDepth;
 		}, [categoryDepth, isThinking, crossFadeToMotion]);
-
-		// コンポーネントのクリーンアップ
-		useEffect(() => {
-			return () => {
-				if (expressionResetTimerRef.current) {
-					clearTimeout(expressionResetTimerRef.current);
-				}
-			};
-		}, []);
 
 		// VRMモデル表示用オプション
 		const vrmOptions = {

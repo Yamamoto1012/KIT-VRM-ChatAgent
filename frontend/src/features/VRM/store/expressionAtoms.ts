@@ -1,0 +1,103 @@
+/**
+ * VRM表情管理のためのJotai Atoms
+ */
+
+import type { VRM } from "@pixiv/three-vrm";
+import { atom } from "jotai";
+import type { SentimentCategory } from "../../../types/sentiment";
+import type { ExpressionPreset } from "../constants/vrmExpressions";
+
+// Primitive Atoms (基本状態)
+/**
+ * VRMモデルのatom
+ */
+export const vrmAtom = atom<VRM | null>(null);
+
+/**
+ * 現在の基本表情プリセット
+ */
+export const currentExpressionAtom = atom<ExpressionPreset>("neutral");
+
+/**
+ * 現在の表情の重み（0-1）
+ */
+export const currentWeightAtom = atom<number>(0);
+
+/**
+ * リップシンクが有効かどうか
+ */
+export const isLipSyncActiveAtom = atom<boolean>(false);
+
+/**
+ * 現在の感情カテゴリ
+ */
+export const currentSentimentAtom = atom<SentimentCategory | null>(null);
+
+/**
+ * 最後のマイクロ表情適用時刻
+ */
+export const lastMicroExpressionTimeAtom = atom<number>(0);
+
+/**
+ * 利用可能な表情名のリスト
+ */
+export const availableExpressionsAtom = atom<string[]>([]);
+
+/**
+ * 思考中フラグ
+ */
+export const isThinkingAtom = atom<boolean>(false);
+
+/**
+ * グリーティングモードフラグ
+ */
+export const isGreetingModeAtom = atom<boolean>(false);
+
+/**
+ * リップシンク前の感情表情を保存
+ */
+export const sentimentExpressionBeforeLipSyncAtom = atom<{
+	preset: ExpressionPreset | null;
+	weight: number;
+}>({
+	preset: null,
+	weight: 0,
+});
+
+// Derived Atoms (派生状態 - Read-only)
+/**
+ * 現在の表情状態を取得する
+ */
+export const currentExpressionStateAtom = atom((get) => ({
+	expression: get(currentExpressionAtom),
+	weight: get(currentWeightAtom),
+	isLipSyncActive: get(isLipSyncActiveAtom),
+}));
+
+/**
+ * 現在の感情状態を取得する
+ */
+export const currentSentimentStateAtom = atom((get) => ({
+	sentiment: get(currentSentimentAtom),
+	isThinking: get(isThinkingAtom),
+	isGreetingMode: get(isGreetingModeAtom),
+}));
+
+/**
+ * VRMが利用可能かどうか
+ */
+export const isVrmAvailableAtom = atom((get) => get(vrmAtom) !== null);
+
+/**
+ * デバッグ情報を取得する
+ */
+export const expressionDebugInfoAtom = atom((get) => ({
+	isLipSyncActive: get(isLipSyncActiveAtom),
+	currentExpression: get(currentExpressionAtom),
+	currentWeight: get(currentWeightAtom),
+	currentSentiment: get(currentSentimentAtom),
+	vrmAvailable: get(vrmAtom) !== null,
+	isThinking: get(isThinkingAtom),
+	isGreetingMode: get(isGreetingModeAtom),
+	lastMicroExpressionTime: get(lastMicroExpressionTimeAtom),
+}));

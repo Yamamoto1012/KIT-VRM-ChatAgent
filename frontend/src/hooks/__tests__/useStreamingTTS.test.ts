@@ -182,11 +182,14 @@ describe("useStreamingTTS", () => {
 				setExpression: vi.fn(),
 				setExpressionForMotion: vi.fn(),
 				setExpressionBySentiment: vi.fn(),
+				triggerMicroExpression: vi.fn(),
 				startThinking: vi.fn(),
 				stopThinking: vi.fn(),
 				isThinking: false,
 				getLastMotion: vi.fn().mockReturnValue(""),
 				restoreLastMotion: vi.fn(),
+				startGreetingMode: vi.fn(),
+				endGreetingMode: vi.fn(),
 			},
 		};
 

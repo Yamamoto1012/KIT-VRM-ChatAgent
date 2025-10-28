@@ -1,4 +1,5 @@
 import { useFrame } from "@react-three/fiber";
+import { useSetAtom } from "jotai";
 import {
 	forwardRef,
 	useEffect,
@@ -7,12 +8,10 @@ import {
 	useRef,
 } from "react";
 import { Clock, Euler, Object3D, Vector3 } from "three";
-import {
-	type ExpressionPreset,
-	VRM_EXPRESSION_CONFIG,
-} from "../constants/vrmExpressions";
+import { VRM_EXPRESSION_CONFIG } from "../constants/vrmExpressions";
 import { useVRM } from "../hooks/useVRM";
 import { useVRMExpression } from "../hooks/useVRMExpression";
+import { vrmAtom } from "../store/expressionAtoms";
 
 type VRMRenderProps = {
 	vrmUrl: string; // VRMモデルのURL
@@ -56,6 +55,9 @@ export const VRMRender = forwardRef(
 			modelRotation,
 		);
 
+		// VRMモデルをatomに設定するためのsetter
+		const setVrm = useSetAtom(vrmAtom);
+
 		// 表情制御
 		const expressions = useVRMExpression(vrm, isMuted);
 
@@ -71,23 +73,6 @@ export const VRMRender = forwardRef(
 		// refを通じて親コンポーネントにAPI関数を公開
 		useImperativeHandle(ref, () => ({
 			crossFadeAnimation,
-			setExpression: expressions.setExpression,
-			setExpressionForMotion: expressions.setExpressionForMotion,
-			setExpressionBySentiment: expressions.setExpressionBySentiment,
-			triggerMicroExpression: (
-				preset: string,
-				weight: number,
-				duration: number,
-			) => {
-				if (expressions.expressionManager) {
-					// presetはExpressionPresetと互換性があることを前提とする
-					expressions.expressionManager.triggerMicroExpression(
-						preset as ExpressionPreset,
-						weight,
-						duration,
-					);
-				}
-			},
 			playAudio: (audioUrl: string, text?: string) => {
 				if (expressions.playAudio) {
 					expressions.playAudio(audioUrl, text);
@@ -95,8 +80,6 @@ export const VRMRender = forwardRef(
 					console.error("🎬 [VRMRender] expressions.playAudio is undefined!");
 				}
 			},
-			isAudioInitialized: expressions.isAudioInitialized,
-			getExpressionManager: () => expressions.expressionManager,
 		}));
 
 		// 初期モーション読み込み時に表情も設定
@@ -148,6 +131,17 @@ export const VRMRender = forwardRef(
 				vrm.lookAt.target = lookAtTarget;
 			}
 		}, [vrm, lookAtTarget]);
+
+		// VRMモデルをatomに設定
+		useEffect(() => {
+			if (vrm) {
+				setVrm(vrm);
+			}
+			// unmount時にatomをクリア
+			return () => {
+				setVrm(null);
+			};
+		}, [vrm, setVrm]);
 
 		// フレームごとの更新処理
 		useFrame(() => {
