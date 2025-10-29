@@ -29,22 +29,18 @@ import {
 	safeSetExpression,
 } from "../safeSetExpression";
 import {
-	type MediaPipeDetectionData,
 	applyPulseEffect,
 	calculateInterpolatedWeight,
 	calculateLipSyncWeight,
-	calculateMediaPipeMicroExpressionProbability,
 	getCurrentLipSyncWeight,
 	getExpressionConfigForSentiment,
 	getExpressionForPhoneme,
-	getExpressionFromMediaPipeData,
 	getExpressionWithVariation,
 	getFallbackExpression,
 	getSentimentFromPreset,
 	resetAllExpressions,
 	resetBasicExpressions,
 	resetLipSyncExpressions,
-	selectMediaPipeIdleExpression,
 	selectNeutralMicroExpression,
 	setMultipleLipSyncExpressions,
 	setVrmExpression,
@@ -82,19 +78,6 @@ export interface ExpressionManagerActions {
 		},
 	) => boolean;
 	resetSentiment: () => void;
-
-	// MediaPipe統合
-	setExpressionByMediaPipeData: (
-		detectionData: MediaPipeDetectionData,
-	) => boolean;
-	applyMediaPipeMicroExpressions: (detectionData: {
-		faceConfidence?: number;
-		eyeContact?: boolean;
-		handMovement?: boolean;
-		postureStability?: number;
-	}) => void;
-	handleMediaPipeIdleState: () => void;
-	resetMediaPipeIntegration: () => void;
 
 	// マイクロ表情
 	triggerMicroExpression: (
@@ -488,100 +471,8 @@ export const useExpressionManager = (): ExpressionManagerActions &
 	}, [setCurrentSentiment, setLastMicroExpressionTime, setExpression]);
 
 	// ========================================
-	// MediaPipe統合
-	// ========================================
-
-	const setExpressionByMediaPipeData = useCallback(
-		(detectionData: MediaPipeDetectionData): boolean => {
-			if (!vrm) return false;
-
-			const { preset: targetExpression, weight: targetWeight } =
-				getExpressionFromMediaPipeData(detectionData);
-
-			return setExpression(targetExpression, targetWeight);
-		},
-		[vrm, setExpression],
-	);
-
-	const applyMediaPipeMicroExpressions = useCallback(
-		(detectionData: {
-			faceConfidence?: number;
-			eyeContact?: boolean;
-			handMovement?: boolean;
-			postureStability?: number;
-		}) => {
-			if (!vrm) return;
-
-			const now = Date.now();
-			const timeSinceLastMicro = now - lastMicroExpressionTime;
-
-			const probability =
-				calculateMediaPipeMicroExpressionProbability(detectionData);
-
-			if (timeSinceLastMicro > 1500 && Math.random() < probability) {
-				const microExpressions = [
-					{ preset: "happy" as ExpressionPreset, weight: 0.3, duration: 800 },
-					{
-						preset: "surprised" as ExpressionPreset,
-						weight: 0.2,
-						duration: 600,
-					},
-					{
-						preset: "neutral" as ExpressionPreset,
-						weight: 0.4,
-						duration: 1000,
-					},
-				];
-
-				const selectedMicro =
-					microExpressions[Math.floor(Math.random() * microExpressions.length)];
-
-				setExpression(selectedMicro.preset, selectedMicro.weight);
-				setLastMicroExpressionTime(now);
-
-				// 指定時間後に元の表情に戻す
-				const timerId = setTimeout(() => {
-					if (currentSentiment === null) {
-						setExpression(
-							"neutral",
-							VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT,
-						);
-					}
-				}, selectedMicro.duration);
-
-				timersRef.current.set("mediapipe-micro", timerId);
-			}
-		},
-		[
-			vrm,
-			lastMicroExpressionTime,
-			currentSentiment,
-			setExpression,
-			setLastMicroExpressionTime,
-		],
-	);
-
-	const handleMediaPipeIdleState = useCallback(() => {
-		if (!vrm) return;
-
-		const now = Date.now();
-		const idleTime = now - lastMicroExpressionTime;
-
-		if (idleTime > 5000) {
-			const { preset, weight } = selectMediaPipeIdleExpression();
-			setExpression(preset, weight);
-			setLastMicroExpressionTime(now);
-		}
-	}, [vrm, lastMicroExpressionTime, setExpression, setLastMicroExpressionTime]);
-
-	const resetMediaPipeIntegration = useCallback(() => {
-		if (currentSentiment === null) {
-			setExpression("neutral", VRM_EXPRESSION_CONFIG.WEIGHTS.EMOTION_LIGHT);
-		}
-		setLastMicroExpressionTime(0);
-	}, [currentSentiment, setExpression, setLastMicroExpressionTime]);
-
 	// マイクロ表情
+	// ========================================
 	const triggerMicroExpression = useCallback(
 		(preset: ExpressionPreset, weight: number, duration: number) => {
 			if (!vrm) return;
@@ -680,10 +571,6 @@ export const useExpressionManager = (): ExpressionManagerActions &
 		setLipSyncActive: setLipSyncActiveCallback,
 		setExpressionBySentiment,
 		resetSentiment,
-		setExpressionByMediaPipeData,
-		applyMediaPipeMicroExpressions,
-		handleMediaPipeIdleState,
-		resetMediaPipeIntegration,
 		triggerMicroExpression,
 		startGreetingMode,
 		endGreetingMode,

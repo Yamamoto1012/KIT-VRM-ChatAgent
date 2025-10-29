@@ -1,31 +1,91 @@
-import { useEffect, useRef } from "react";
+import type React from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import "./App.css";
 import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "./components/AppLayout";
 import { AudioPlayingIndicator } from "./components/AudioPlayingIndicator";
-import {
-	SentimentDebugToggle,
-	SentimentDebugView,
-} from "./components/debug/SentimentDebugView";
+import { ComponentLoader } from "./components/loading/ComponentLoader";
+import { SkeletonLoader } from "./components/loading/SkeletonLoader";
 import type { ChatInterfaceHandle } from "./features/ChatInterface/ChatInterface";
 import { ControlButtons } from "./features/ControlButtons/ControlButtons";
 import { useGreeting } from "./features/Greeting/hooks/useGreeting";
-import { MediaPipeDetection } from "./features/MediaPipe/MediaPipeDetection";
-import { MotionViewer, MotionViewerToggle } from "./features/MotionViewer";
 import { ScreenManager } from "./features/ScreenManager/ScreenManager";
-import { VRMContainer } from "./features/VRM/VRMContainer/VRMContainer";
 import { useAudioContext } from "./features/VRM/hooks/useAudioContext";
-import { VoiceChatDialog } from "./features/VoiceChat/VoiceChatDialog";
 import { useCategorySelection } from "./hooks/useCategorySelection";
 import {
 	isControlMenuOpenAtom,
-	isMediaPipeEnabledAtom,
-	showMediaPipeDetectionAtom,
 	showVoiceChatAtom,
 } from "./store/appStateAtoms";
 import { currentLanguageAtom } from "./store/languageAtoms";
 import { showBottomNavigationAtom } from "./store/navigationAtoms";
+
+// 遅延読み込みコンポーネント：条件付きでのみ必要なコンポーネントを遅延ロード
+// VoiceChatDialog: 音声チャットが開かれた時のみロード
+const VoiceChatDialog = lazy(() =>
+	import("./features/VoiceChat/VoiceChatDialog").then((module) => ({
+		default: module.VoiceChatDialog,
+	})),
+);
+
+// VRMContainer: アイドル時に遅延読み込み（Three.js関連の重量級ライブラリを初期バンドルから分離）
+const VRMContainer = lazy(() => {
+	return new Promise<{
+		default: React.ComponentType<
+			React.ComponentProps<
+				typeof import("./features/VRM/VRMContainer/VRMContainer").VRMContainer
+			>
+		>;
+	}>((resolve) => {
+		if ("requestIdleCallback" in window) {
+			requestIdleCallback(() => {
+				import("./features/VRM/VRMContainer/VRMContainer").then((module) =>
+					resolve({ default: module.VRMContainer }),
+				);
+			});
+		} else {
+			// Safari未対応のためフォールバック
+			setTimeout(() => {
+				import("./features/VRM/VRMContainer/VRMContainer").then((module) =>
+					resolve({ default: module.VRMContainer }),
+				);
+			}, 1);
+		}
+	});
+});
+
+// デバッグツール: 開発環境でのみ遅延読み込み
+const SentimentDebugToggle = import.meta.env.DEV
+	? lazy(() =>
+			import("./components/debug/SentimentDebugView").then((m) => ({
+				default: m.SentimentDebugToggle,
+			})),
+		)
+	: null;
+
+const SentimentDebugView = import.meta.env.DEV
+	? lazy(() =>
+			import("./components/debug/SentimentDebugView").then((m) => ({
+				default: m.SentimentDebugView,
+			})),
+		)
+	: null;
+
+const MotionViewerToggle = import.meta.env.DEV
+	? lazy(() =>
+			import("./features/MotionViewer").then((m) => ({
+				default: m.MotionViewerToggle,
+			})),
+		)
+	: null;
+
+const MotionViewer = import.meta.env.DEV
+	? lazy(() =>
+			import("./features/MotionViewer").then((m) => ({
+				default: m.MotionViewer,
+			})),
+		)
+	: null;
 
 /**
  * アプリケーションのメインコンポーネント
@@ -35,8 +95,6 @@ export default function App() {
 	const [isControlMenuOpen] = useAtom(isControlMenuOpenAtom);
 	const [showBottomNavigation] = useAtom(showBottomNavigationAtom);
 	const [currentLanguage] = useAtom(currentLanguageAtom);
-	const [showMediaPipeDetection] = useAtom(showMediaPipeDetectionAtom);
-	const [isMediaPipeEnabled] = useAtom(isMediaPipeEnabledAtom);
 	const { i18n } = useTranslation();
 
 	// アプリ起動時に保存された言語設定とi18nextを同期
@@ -82,12 +140,14 @@ export default function App() {
 	return (
 		<AppLayout>
 			{/* 3Dモデル表示領域 */}
-			<VRMContainer
-				categoryDepth={categoryDepth}
-				showActionPrompt={showActionPrompt}
-				showSearchResult={showSearchResult}
-				vrmWrapperRef={vrmWrapperRef}
-			/>
+			<Suspense fallback={<SkeletonLoader className="w-full h-screen" />}>
+				<VRMContainer
+					categoryDepth={categoryDepth}
+					showActionPrompt={showActionPrompt}
+					showSearchResult={showSearchResult}
+					vrmWrapperRef={vrmWrapperRef}
+				/>
+			</Suspense>
 
 			{/* 音声チャットが非表示の時のみUIを表示 */}
 			{!showVoiceChat && (
@@ -113,46 +173,42 @@ export default function App() {
 
 					{/* コントロールボタン群*/}
 					{!showBottomNavigation && <ControlButtons />}
-
-					{/* MediaPipe検出機能UI */}
-					{showMediaPipeDetection && isMediaPipeEnabled && (
-						<div className="fixed bottom-24 right-4 z-50 max-w-md">
-							<MediaPipeDetection
-								autoStart={isMediaPipeEnabled}
-								showUI={showMediaPipeDetection}
-								enableVRMReaction={true}
-								// onUserPresent={() => {
-								// 	console.log("ユーザーが検出されました");
-								// }}
-								// onUserLeft={() => {
-								// 	console.log("ユーザーが離れました");
-								// }}
-								// onError={(error) => {
-								// 	console.error("MediaPipe エラー:", error);
-								// }}
-								onPlayAnimation={(animationUrl: string) => {
-									// console.log(`Playing animation: ${animationUrl}`);
-									vrmWrapperRef.current?.crossFadeAnimation(animationUrl);
-								}}
-							/>
-						</div>
-					)}
 				</>
 			)}
 
 			{/* 音声チャットダイアログ */}
-			<VoiceChatDialog vrmWrapperRef={vrmWrapperRef} />
+			{showVoiceChat && (
+				<Suspense fallback={<ComponentLoader />}>
+					<VoiceChatDialog vrmWrapperRef={vrmWrapperRef} />
+				</Suspense>
+			)}
 
 			{/* グローバル音声再生インジケーター */}
 			<AudioPlayingIndicator />
 
-			{/* 感情分析デバッグ機能 */}
-			<SentimentDebugToggle />
-			<SentimentDebugView />
+			{/* 感情分析デバッグ機能（開発環境のみ） */}
+			{import.meta.env.DEV && SentimentDebugToggle && (
+				<Suspense fallback={null}>
+					<SentimentDebugToggle />
+				</Suspense>
+			)}
+			{import.meta.env.DEV && SentimentDebugView && (
+				<Suspense fallback={null}>
+					<SentimentDebugView />
+				</Suspense>
+			)}
 
-			{/* モーションビューワーデバッグ機能 */}
-			<MotionViewerToggle />
-			<MotionViewer vrmWrapperRef={vrmWrapperRef} />
+			{/* モーションビューワーデバッグ機能（開発環境のみ） */}
+			{import.meta.env.DEV && MotionViewerToggle && (
+				<Suspense fallback={null}>
+					<MotionViewerToggle />
+				</Suspense>
+			)}
+			{import.meta.env.DEV && MotionViewer && (
+				<Suspense fallback={null}>
+					<MotionViewer vrmWrapperRef={vrmWrapperRef} />
+				</Suspense>
+			)}
 		</AppLayout>
 	);
 }

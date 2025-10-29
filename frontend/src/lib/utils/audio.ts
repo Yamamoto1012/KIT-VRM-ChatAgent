@@ -6,12 +6,6 @@ export type TTSRequest = {
 	format: AudioFormat;
 };
 
-export type AudioPlayerOptions = {
-	autoplay?: boolean;
-	volume?: number;
-	loop?: boolean;
-};
-
 /**
  * TTS APIリクエストのバリデーション
  * @param request TTSリクエストオブジェクト
@@ -96,33 +90,6 @@ export const estimateAudioDuration = (text: string): number => {
 	const baseMs = text.length * 200;
 	const bufferMs = 1000; // 1秒のバッファ
 	return baseMs + bufferMs;
-};
-
-/**
- * HTMLAudioElementを作成する
- * @param src 音声ファイルのURL
- * @param options オプション設定
- * @returns 作成されたHTMLAudioElement
- */
-export const createAudioElement = (
-	src: string,
-	options: AudioPlayerOptions = {},
-): HTMLAudioElement => {
-	const audio = new Audio(src);
-
-	if (options.autoplay !== undefined) {
-		audio.autoplay = options.autoplay;
-	}
-
-	if (options.volume !== undefined) {
-		audio.volume = Math.max(0, Math.min(1, options.volume));
-	}
-
-	if (options.loop !== undefined) {
-		audio.loop = options.loop;
-	}
-
-	return audio;
 };
 
 /**

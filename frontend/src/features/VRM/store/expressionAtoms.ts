@@ -63,27 +63,3 @@ export const sentimentExpressionBeforeLipSyncAtom = atom<{
 	preset: null,
 	weight: 0,
 });
-
-// Derived Atoms (派生状態 - Read-only)
-/**
- * 現在の表情状態を取得する
- */
-export const currentExpressionStateAtom = atom((get) => ({
-	expression: get(currentExpressionAtom),
-	weight: get(currentWeightAtom),
-	isLipSyncActive: get(isLipSyncActiveAtom),
-}));
-
-/**
- * 現在の感情状態を取得する
- */
-export const currentSentimentStateAtom = atom((get) => ({
-	sentiment: get(currentSentimentAtom),
-	isThinking: get(isThinkingAtom),
-	isGreetingMode: get(isGreetingModeAtom),
-}));
-
-/**
- * VRMが利用可能かどうか
- */
-export const isVrmAvailableAtom = atom((get) => get(vrmAtom) !== null);

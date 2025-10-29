@@ -5,7 +5,7 @@ import {
 	vrmLoadingTextAtom,
 } from "@/store/vrmLoadingAtoms";
 import type { VRM } from "@pixiv/three-vrm";
-import { VRMLoaderPlugin } from "@pixiv/three-vrm";
+import { VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
 import {
 	VRMAnimationLoaderPlugin,
 	createVRMAnimationClip,
@@ -147,6 +147,16 @@ export const useVRM = (
 						loadedVRM.scene.rotation.y = Math.PI; // 180度回転
 					}
 				}
+
+				// VRMUtils最適化関数の適用（メモリ使用量削減、レンダリング高速化）
+				VRMUtils.removeUnnecessaryVertices(gltf.scene); // 不要な頂点削除
+				VRMUtils.combineSkeletons(gltf.scene); // スケルトン統合
+				VRMUtils.combineMorphs(loadedVRM); // モーフターゲット統合
+
+				// Frustum culling無効化（VRM特有の最適化）
+				loadedVRM.scene.traverse((obj) => {
+					obj.frustumCulled = false;
+				});
 
 				// 状態を更新
 				setVRM(loadedVRM);

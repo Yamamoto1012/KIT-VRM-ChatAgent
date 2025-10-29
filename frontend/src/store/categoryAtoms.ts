@@ -172,13 +172,3 @@ export const navigateBackAtom = atom(null, (get, set) => {
 			break;
 	}
 });
-
-/**
- * カテゴリーナビゲーションの状態をリセットするアクション
- */
-export const resetCategoryNavigationAtom = atom(null, (_get, set) => {
-	set(selectedMainCategoryIdAtom, null);
-	set(selectedSubCategoryIdAtom, null);
-	set(selectedSubSubCategoryIdAtom, null);
-	set(categoryDepthAtom, 0);
-});
