@@ -14,7 +14,9 @@ import { useAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Group, Scene } from "three";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { disposeVRM } from "../utils/vrmMemoryUtils";
 
 type UseVRMReturn = {
 	vrm: VRM | null; // ロードされたVRMモデル
@@ -98,6 +100,11 @@ export const useVRM = (
 
 	// モデル読み込み処理をラップした関数
 	const loadVRMModel = () => {
+		// 既存のVRMがあればdispose（メモリリーク防止）
+		if (vrm) {
+			disposeVRM(vrm);
+		}
+
 		// 読み込み開始前の状態リセット
 		setIsLoaded(false);
 		setHasError(false);
@@ -112,6 +119,14 @@ export const useVRM = (
 
 		// GLTFローダーの初期化とプラグイン登録
 		const loader = new GLTFLoader();
+
+		// DRACOLoaderの設定
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath(
+			"https://www.gstatic.com/draco/versioned/decoders/1.5.7/",
+		);
+		loader.setDRACOLoader(dracoLoader);
+
 		loader.register((parser) => new VRMLoaderPlugin(parser));
 		loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
 		loaderRef.current = loader;
@@ -222,9 +237,10 @@ export const useVRM = (
 
 		loadVRMModel();
 
-		// クリーンアップ関数 - アニメーションを停止
+		// クリーンアップ関数
 		return () => {
 			mixer?.stopAllAction();
+			disposeVRM(vrm);
 		};
 	}, [vrmUrl]);
 
