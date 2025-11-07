@@ -116,15 +116,6 @@ const colorMap = {
 	// ...必要に応じて追加...
 };
 
-// カテゴリー定義の型
-export interface CategoryDef {
-	id: string;
-	titleKey: string;
-	descriptionKey: string;
-	icon: keyof typeof iconMap;
-	color: string;
-}
-
 // メインカテゴリー
 export const mainCategories: Category[] = [
 	{

@@ -64,13 +64,6 @@ export const BASIC_EXPRESSIONS: readonly ExpressionPreset[] = [
 	"relaxed",
 ] as const;
 
-// 瞬き関連表情のリスト
-export const BLINK_EXPRESSIONS: readonly ExpressionPreset[] = [
-	"blink",
-	"blinkLeft",
-	"blinkRight",
-] as const;
-
 // リップシンク用表情のリスト
 export const LIP_SYNC_EXPRESSIONS: readonly LipSyncExpression[] = [
 	"aa",
@@ -89,15 +82,6 @@ export const LIP_SYNC_EXPRESSIONS: readonly LipSyncExpression[] = [
 	"E",
 	"O",
 ] as const;
-
-// 音素から表情へのマッピング
-export const PHONEME_TO_EXPRESSION: Record<string, LipSyncExpression> = {
-	a: "aa",
-	i: "ih",
-	u: "ou",
-	e: "ee",
-	o: "oh",
-} as const;
 
 // モーション名から表情への推奨マッピング
 export const MOTION_TO_EXPRESSION: Record<

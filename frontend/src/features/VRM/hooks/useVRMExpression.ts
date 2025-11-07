@@ -1,11 +1,11 @@
 import type { VRM } from "@pixiv/three-vrm";
 import { useEffect, useRef } from "react";
+import type { SentimentCategory } from "../../../types/sentiment";
+import { useExpressionManager } from "../VRMExpression/hooks/useExpressionManager";
+import type { ExpressionPreset } from "../constants/vrmExpressions";
 import { useBlinking } from "./useBlinking";
 import { useBreathing } from "./useBreathing";
 import { useLipSync } from "./useLipSync";
-
-import type { SentimentCategory } from "../../../types/sentiment";
-import type { ExpressionPreset } from "../constants/vrmExpressions";
 
 /**
  * VRM表情状態の型定義
@@ -25,13 +25,13 @@ export const useVRMExpression = (vrm: VRM | null, isMuted: boolean) => {
 	// デバッグ用フラグ
 	const debugLoggedRef = useRef<boolean>(false);
 
+	// useExpressionManagerフックを直接使用
+	const expressionManager = useExpressionManager();
+
 	// 各サブシステムのフック
 	const { updateBlink } = useBlinking(vrm);
 	const { updateBreath } = useBreathing(vrm);
-	const { playAudio, isAudioInitialized, expressionManager } = useLipSync(
-		vrm,
-		isMuted,
-	);
+	const { playAudio, isAudioInitialized } = useLipSync(vrm, isMuted);
 
 	// ExpressionManagerが更新された時の処理
 	useEffect(() => {
@@ -46,7 +46,6 @@ export const useVRMExpression = (vrm: VRM | null, isMuted: boolean) => {
 	 * @param weight - 表情の重み（オプション、デフォルトは1.0）
 	 */
 	const setExpression = (preset: ExpressionPreset, weight?: number) => {
-		if (!expressionManager) return;
 		expressionManager.setExpression(preset, weight);
 	};
 
@@ -55,7 +54,6 @@ export const useVRMExpression = (vrm: VRM | null, isMuted: boolean) => {
 	 * @param motionName - モーション名
 	 */
 	const setExpressionForMotion = (motionName: string) => {
-		if (!expressionManager) return;
 		expressionManager.setExpressionForMotion(motionName);
 	};
 
@@ -71,8 +69,6 @@ export const useVRMExpression = (vrm: VRM | null, isMuted: boolean) => {
 			forceUpdate?: boolean;
 		},
 	) => {
-		// ExpressionManagerが未初期化の場合は何もしない
-		if (!expressionManager) return;
 		expressionManager.setExpressionBySentiment(category, options);
 	};
 
@@ -93,14 +89,9 @@ export const useVRMExpression = (vrm: VRM | null, isMuted: boolean) => {
 	 * 現在の表情状態を取得する
 	 */
 	const getCurrentExpression = (): VRMExpressionState => {
-		if (!expressionManager) {
-			return { preset: "neutral", weight: 0 };
-		}
-
-		const state = expressionManager.getCurrentState();
 		return {
-			preset: state.expression,
-			weight: state.weight,
+			preset: expressionManager.currentExpression,
+			weight: expressionManager.currentWeight,
 		};
 	};
 
@@ -112,6 +103,5 @@ export const useVRMExpression = (vrm: VRM | null, isMuted: boolean) => {
 		currentExpression: getCurrentExpression(),
 		playAudio,
 		isAudioInitialized,
-		expressionManager,
 	};
 };

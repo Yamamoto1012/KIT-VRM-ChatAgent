@@ -1,9 +1,9 @@
 import type { VRM } from "@pixiv/three-vrm";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AudioQueueItem } from "../../../hooks/useStreamingTTS";
 import { LipSync } from "../LipSync/lipSync";
 import type { LipSyncAnalyzeResult } from "../LipSync/types";
-import { ExpressionManager } from "../VRMExpression/ExpressionManager";
+import { useExpressionManager } from "../VRMExpression/hooks/useExpressionManager";
 import { VRM_EXPRESSION_CONFIG } from "../constants/vrmExpressions";
 import { useAcousticFeatureDetector } from "./audio/useAcousticFeatureDetector";
 
@@ -112,7 +112,7 @@ type LipSyncMode = "acoustic" | "text" | "hybrid";
  * @returns リップシンク制御のための関数と状態
  */
 export const useLipSync = (
-	vrm: VRM | null,
+	_vrm: VRM | null,
 	isMuted: boolean,
 	streamingAudioQueue?: AudioQueueItem[],
 ) => {
@@ -123,16 +123,10 @@ export const useLipSync = (
 	const lastPhonemeRef = useRef<string>("");
 	const smoothingBufferRef = useRef<number[]>([]);
 
-	// ExpressionManagerのインスタンスを作成・管理
-	const expressionManager = useMemo(() => new ExpressionManager(vrm), [vrm]);
+	const expressionManager = useExpressionManager();
 
 	// 音響特徴検出器のhook
 	const acousticFeatureDetector = useAcousticFeatureDetector();
-
-	// VRMが変更された時にExpressionManagerを更新
-	useEffect(() => {
-		expressionManager.setVRM(vrm);
-	}, [vrm, expressionManager]);
 
 	// ストリーミング音声キューの監視とリップシンク連携
 	useEffect(() => {
@@ -471,14 +465,17 @@ export const useLipSync = (
 			lipSyncMode,
 			isPlaying: isPlayingAudioRef.current,
 			lastPhoneme: lastPhonemeRef.current,
-			expressionManagerState: expressionManager?.getAcousticLipSyncDebugInfo(),
+			expressionManagerState: {
+				currentExpression: expressionManager.currentExpression,
+				currentWeight: expressionManager.currentWeight,
+				isLipSyncActive: expressionManager.isLipSyncActive,
+			},
 		};
 	}, [audioContext, lipSyncMode, expressionManager]);
 
 	return {
 		playAudio: playAudioWithLipSync,
 		isAudioInitialized: !!audioContext,
-		expressionManager,
 		lipSyncMode,
 		setLipSyncMode,
 		getDebugInfo,

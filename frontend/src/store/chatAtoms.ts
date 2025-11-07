@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { atom } from "jotai";
 
 /**
@@ -28,24 +29,21 @@ export type AudioStreamingState = {
 	audioError: string | null;
 };
 
+const getInitialMessages = (): Message[] => [
+	{ id: 1, text: i18next.t("chat:welcomeMessage"), isUser: false },
+	{ id: 2, text: i18next.t("chat:welcomePrompt"), isUser: false },
+];
+
 /**
  * 初期メッセージ - アプリケーション起動時の最初の挨拶メッセージ
  */
-const initialMessages: Message[] = [
-	{ id: 1, text: "金沢工業大学へようこそ!!", isUser: false },
-	{ id: 2, text: "なんでも質問してください!!", isUser: false },
-];
+const initialMessages: Message[] = getInitialMessages();
 
 /**
  * チャットメッセージを管理するアトム
  * メッセージの追加・削除などの操作はこのアトムを通じて行う
  */
 export const messagesAtom = atom<Message[]>(initialMessages);
-
-/**
- * 入力フィールドの値を管理するアトム
- */
-export const inputValueAtom = atom<string>("");
 
 /**
  * AI思考中の状態を管理するアトム
@@ -150,7 +148,7 @@ export const addMessageWithIdAtom = atom(null, (get, set, message: Message) => {
  * チャットをリセットするアトム
  */
 export const resetChatAtom = atom(null, (_get, set) => {
-	set(messagesAtom, initialMessages);
+	set(messagesAtom, getInitialMessages());
 	set(isThinkingAtom, false);
 	set(audioStreamingStateAtom, {
 		isStreamingActive: false,
@@ -161,56 +159,3 @@ export const resetChatAtom = atom(null, (_get, set) => {
 		audioError: null,
 	});
 });
-
-/**
- * 音声ストリーミング状態を更新するアトム
- */
-export const updateAudioStreamingStateAtom = atom(
-	null,
-	(get, set, updates: Partial<AudioStreamingState>) => {
-		const currentState = get(audioStreamingStateAtom);
-		set(audioStreamingStateAtom, { ...currentState, ...updates });
-	},
-);
-
-/**
- * 音声ストリーミングを開始するアトム
- */
-export const startAudioStreamingAtom = atom(
-	null,
-	(_get, set, messageId: number) => {
-		set(updateAudioStreamingStateAtom, {
-			isStreamingActive: true,
-			currentPlayingMessageId: messageId,
-			audioError: null,
-		});
-	},
-);
-
-/**
- * 音声ストリーミングを停止するアトム
- */
-export const stopAudioStreamingAtom = atom(null, (_get, set) => {
-	set(updateAudioStreamingStateAtom, {
-		isStreamingActive: false,
-		currentPlayingMessageId: null,
-		queuedMessageIds: [],
-		isGeneratingAudio: false,
-		isPlayingAudio: false,
-	});
-});
-
-/**
- * ランダムな質問テキストを生成する関数
- * @returns ランダムな質問文字列
- */
-export const getRandomText = () => {
-	const randomQuestions = [
-		"金沢工業大学の学部について教えてください",
-		"キャンパスの施設について知りたいです",
-		"学食のおすすめメニューは何ですか？",
-		"金沢工業大学の就職率はどのくらいですか？",
-		"プロジェクト活動について教えてください",
-	];
-	return randomQuestions[Math.floor(Math.random() * randomQuestions.length)];
-};

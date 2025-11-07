@@ -1,0 +1,17 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"entry": ["src/main.tsx", "src/routes/**/*.tsx"],
+	"project": [
+		"src/**/*.{ts,tsx}",
+		"!src/**/*.test.{ts,tsx}",
+		"!src/**/*.spec.{ts,tsx}"
+	],
+	"ignore": ["dist/**", "node_modules/**", "src/routeTree.gen.ts"],
+	"ignoreDependencies": ["tailwindcss", "tailwindcss-animate"],
+	"ignoreExportsUsedInFile": true,
+	"vite": {
+		"config": ["vite.config.ts"]
+	},
+	"eslint": true,
+	"biome": true
+}

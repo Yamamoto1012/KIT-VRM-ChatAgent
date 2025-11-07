@@ -1,7 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
-	Camera,
-	CameraOff,
 	Image,
 	Languages,
 	Menu,
@@ -28,11 +26,6 @@ export type ControlButtonsViewProps = {
 	 * ストリーミングモード状態
 	 */
 	isStreamingMode: boolean;
-
-	/**
-	 * MediaPipe検出機能の有効/無効状態
-	 */
-	isMediaPipeEnabled: boolean;
 
 	/**
 	 * メニューが開いているかどうか（親に通知用）
@@ -68,11 +61,6 @@ export type ControlButtonsViewProps = {
 	 * ストリーミングモード切替のハンドラー
 	 */
 	onToggleStreamingMode: () => void;
-
-	/**
-	 * MediaPipe検出機能切替のハンドラー
-	 */
-	onToggleMediaPipe: () => void;
 };
 
 /**
@@ -84,14 +72,12 @@ export type ControlButtonsViewProps = {
 export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 	isMuted,
 	isStreamingMode,
-	isMediaPipeEnabled,
 	onOpenLanguageSelector,
 	onOpenModelSelector,
 	onOpenBackgroundSelector,
 	onToggleMute,
 	onOpenVoiceChat,
 	onToggleStreamingMode,
-	onToggleMediaPipe,
 	onMenuOpenChange,
 }) => {
 	const { t } = useTranslation("chat");
@@ -118,13 +104,6 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 			label: isStreamingMode ? t("streamingMode") : t("nonStreamingMode"),
 			onClick: onToggleStreamingMode,
 			isActive: isStreamingMode,
-		},
-		{
-			id: "mediapipe",
-			icon: isMediaPipeEnabled ? Camera : CameraOff,
-			label: isMediaPipeEnabled ? "ユーザー検出ON" : "ユーザー検出OFF",
-			onClick: onToggleMediaPipe,
-			isActive: isMediaPipeEnabled,
 		},
 		{
 			id: "language",
