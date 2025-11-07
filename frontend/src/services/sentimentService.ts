@@ -141,5 +141,3 @@ class SentimentService {
 
 // シングルトンインスタンス
 export const sentimentService = new SentimentService();
-
-export default sentimentService;

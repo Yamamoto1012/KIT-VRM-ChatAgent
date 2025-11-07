@@ -278,27 +278,3 @@ export const deduplicateTriggers = (
 
 	return deduplicated;
 };
-
-/**
- * デバッグ用：検出されたトリガーを表示
- */
-export const debugTriggers = (
-	text: string,
-	triggers: MicroExpressionTrigger[],
-): void => {
-	console.group("表情トリガー検出結果");
-	console.log("テキスト:", text);
-	console.log("トリガー数:", triggers.length);
-
-	for (const trigger of triggers) {
-		const context = text.substring(
-			Math.max(0, trigger.position - 5),
-			Math.min(text.length, trigger.position + 10),
-		);
-		console.log(
-			`[${trigger.position}] ${trigger.type} (${trigger.weight}) - "${context}"`,
-		);
-	}
-
-	console.groupEnd();
-};

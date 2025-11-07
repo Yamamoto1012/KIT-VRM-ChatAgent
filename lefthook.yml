@@ -67,6 +67,13 @@ pre-commit:
       run: npx tsc --noEmit --project tsconfig.json
       fail_text: "❌ TypeScript check failed. Please fix type errors and try again."
 
+    # knipによる未使用コード・依存関係チェック（frontendディレクトリ）
+    knip-check:
+      root: "frontend/"
+      glob: "*.{js,jsx,ts,tsx,json}"
+      run: pnpm knip
+      fail_text: "❌ Knip found unused code or dependencies. Please review and clean up."
+
 # pre-push hook: プッシュ前のテスト実行
 pre-push:
   commands:

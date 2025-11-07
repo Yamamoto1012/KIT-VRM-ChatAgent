@@ -5,7 +5,7 @@ import {
 	vrmLoadingTextAtom,
 } from "@/store/vrmLoadingAtoms";
 import type { VRM } from "@pixiv/three-vrm";
-import { VRMLoaderPlugin } from "@pixiv/three-vrm";
+import { VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
 import {
 	VRMAnimationLoaderPlugin,
 	createVRMAnimationClip,
@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Group, Scene } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { disposeVRM } from "../utils/vrmMemoryUtils";
 
 type UseVRMReturn = {
 	vrm: VRM | null; // ロードされたVRMモデル
@@ -98,6 +99,11 @@ export const useVRM = (
 
 	// モデル読み込み処理をラップした関数
 	const loadVRMModel = () => {
+		// 既存のVRMがあればdispose（メモリリーク防止）
+		if (vrm) {
+			disposeVRM(vrm);
+		}
+
 		// 読み込み開始前の状態リセット
 		setIsLoaded(false);
 		setHasError(false);
@@ -147,6 +153,16 @@ export const useVRM = (
 						loadedVRM.scene.rotation.y = Math.PI; // 180度回転
 					}
 				}
+
+				// VRMUtils最適化関数の適用（メモリ使用量削減、レンダリング高速化）
+				VRMUtils.removeUnnecessaryVertices(gltf.scene); // 不要な頂点削除
+				VRMUtils.combineSkeletons(gltf.scene); // スケルトン統合
+				VRMUtils.combineMorphs(loadedVRM); // モーフターゲット統合
+
+				// Frustum culling無効化（VRM特有の最適化）
+				loadedVRM.scene.traverse((obj) => {
+					obj.frustumCulled = false;
+				});
 
 				// 状態を更新
 				setVRM(loadedVRM);
@@ -212,9 +228,10 @@ export const useVRM = (
 
 		loadVRMModel();
 
-		// クリーンアップ関数 - アニメーションを停止
+		// クリーンアップ関数
 		return () => {
 			mixer?.stopAllAction();
+			disposeVRM(vrm);
 		};
 	}, [vrmUrl]);
 

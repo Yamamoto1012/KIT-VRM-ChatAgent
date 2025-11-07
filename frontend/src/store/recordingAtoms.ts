@@ -19,12 +19,6 @@ export const isRecordingAtom = atom<boolean>(false);
 export const recordingTimerAtom = atom<number>(0);
 
 /**
- * 録音の最大時間（ミリ秒）を管理する定数アトム
- * 将来的に設定画面から変更できるようにする場合はwritableアトムに変更
- */
-export const recordingDurationAtom = atom<number>(5000);
-
-/**
  * 録音の間隔を管理するアトム（ミリ秒）
  * タイマーの精度を決定
  */
@@ -35,14 +29,6 @@ export const recordingIntervalAtom = atom<number>(100);
  * 実際の音声認識APIを連携する際のプレースホルダー
  */
 export const recognizedTextAtom = atom<string>("");
-
-/**
- * ランダムテキスト生成関数を保持するアトム
- * 書き込み可能なプライムアトムとして実装
- */
-export const randomTextGeneratorAtom = atom<((text?: string) => string) | null>(
-	null,
-);
 
 // 音声認識インスタンスの保持用変数
 let speechRecognition: WebSpeechRecognition | null = null;

@@ -40,12 +40,3 @@ export const addSimpleChatMessageAtom = atom(
 		set(simpleChatMessagesAtom, [...get(simpleChatMessagesAtom), newMessage]);
 	},
 );
-
-/**
- * チャット履歴をリセットするWrite-onlyアトム
- */
-export const resetSimpleChatAtom = atom(null, (_get, set) => {
-	set(simpleChatMessagesAtom, []);
-	set(simpleChatInputAtom, "");
-	set(simpleChatIsThinkingAtom, false);
-});
