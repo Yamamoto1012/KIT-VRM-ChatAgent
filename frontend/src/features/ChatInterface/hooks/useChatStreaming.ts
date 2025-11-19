@@ -487,7 +487,7 @@ export const useChatStreaming = ({
 
 					// レスポンスを文字単位でアニメーション表示
 					// バッファをクリアしてから新しいレスポンスを設定
-					streamBuffer.current = response;
+					streamBuffer.current = response.answer;
 					currentDisplayText.current = "";
 
 					// アニメーション開始
@@ -497,13 +497,13 @@ export const useChatStreaming = ({
 					}
 
 					// 非ストリーミングモードでは通常のTTSを使用
-					speak(response);
+					speak(response.answer);
 
 					// センチメント分析を実行
-					analyzeSentiment(response);
+					analyzeSentiment(response.answer);
 
 					// テキストベースの表情トリガーを実行
-					triggerExpressionsFromText(response);
+					triggerExpressionsFromText(response.answer);
 
 					// アニメーション完了を待ってからローディング状態を解除
 					const waitForAnimation = () => {
