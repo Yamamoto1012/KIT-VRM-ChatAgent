@@ -2,6 +2,7 @@ import {
 	isControlMenuOpenAtom,
 	isMutedAtom,
 	isStreamingModeAtom,
+	showAivisSettingsAtom,
 	showVoiceChatAtom,
 } from "@/store/appStateAtoms";
 import { showBackgroundSelectorAtom } from "@/store/backgroundAtoms";
@@ -12,6 +13,7 @@ import type { FC } from "react";
 import { BackgroundSelectorDialog } from "../BackgroundSelector/BackgroundSelectorDialog";
 import { LanguageSelector } from "../LanguageSelector/LanguageSelector";
 import { ModelSelectorDialog } from "../ModelSelector/ModelSelectorDialog";
+import { AivisSettings } from "../Settings/components/AivisSettings";
 import { ControlButtonsView } from "./ControlButtonsView";
 
 /**
@@ -28,6 +30,9 @@ export const ControlButtons: FC = () => {
 	const [, setLanguageSelectorOpen] = useAtom(languageSelectorOpenAtom);
 	const setShowModelSelector = useSetAtom(showModelSelectorAtom);
 	const setShowBackgroundSelector = useSetAtom(showBackgroundSelectorAtom);
+	const [showAivisSettings, setShowAivisSettings] = useAtom(
+		showAivisSettingsAtom,
+	);
 
 	/**
 	 * 言語選択ダイアログを開く
@@ -66,6 +71,20 @@ export const ControlButtons: FC = () => {
 		setIsControlMenuOpen(isOpen);
 	};
 
+	/**
+	 * Aivis設定ダイアログを開く
+	 */
+	const handleOpenAivisSettings = () => {
+		setShowAivisSettings(true);
+	};
+
+	/**
+	 * Aivis設定ダイアログを閉じる
+	 */
+	const handleCloseAivisSettings = () => {
+		setShowAivisSettings(false);
+	};
+
 	return (
 		<>
 			<ControlButtonsView
@@ -77,6 +96,7 @@ export const ControlButtons: FC = () => {
 				onToggleMute={handleToggleMute}
 				onOpenVoiceChat={handleOpenVoiceChat}
 				onToggleStreamingMode={handleToggleStreamingMode}
+				onOpenAivisSettings={handleOpenAivisSettings}
 				onMenuOpenChange={handleMenuOpenChange}
 			/>
 			{/* 言語選択ダイアログ */}
@@ -85,6 +105,11 @@ export const ControlButtons: FC = () => {
 			<ModelSelectorDialog />
 			{/* 背景選択ダイアログ */}
 			<BackgroundSelectorDialog />
+			{/* Aivis設定ダイアログ */}
+			<AivisSettings
+				isOpen={showAivisSettings}
+				onClose={handleCloseAivisSettings}
+			/>
 		</>
 	);
 };

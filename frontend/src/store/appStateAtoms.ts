@@ -9,14 +9,17 @@ export const isDirectChatQuestionAtom = atom<boolean>(false);
 // 音声チャット表示状態のatom
 export const showVoiceChatAtom = atom<boolean>(false);
 
+// Aivis設定モーダルの表示状態のatom
+export const showAivisSettingsAtom = atom<boolean>(false);
+
 // 思考中状態のatom
 export const isThinkingAtom = atom<boolean>(false);
 
 // ActionPromptからの質問かどうかを示すatom
 export const isActionPromptQuestionAtom = atom<boolean>(false);
 
-// ストリーミングモードの有効/無効を示すatom（デフォルトはストリーミング有効）
-export const isStreamingModeAtom = atom<boolean>(true);
+// ストリーミングモードの有効/無効を示すatom（デフォルトはストリーミング無効）
+export const isStreamingModeAtom = atom<boolean>(false);
 
 // コントロールメニューの表示状態のatom
 export const isControlMenuOpenAtom = atom<boolean>(false);

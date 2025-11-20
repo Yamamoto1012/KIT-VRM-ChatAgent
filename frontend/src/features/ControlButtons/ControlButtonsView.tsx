@@ -4,6 +4,7 @@ import {
 	Languages,
 	Menu,
 	Mic2,
+	Settings,
 	UserCircle,
 	Volume2,
 	VolumeX,
@@ -61,6 +62,11 @@ export type ControlButtonsViewProps = {
 	 * ストリーミングモード切替のハンドラー
 	 */
 	onToggleStreamingMode: () => void;
+
+	/**
+	 * Aivis設定を開くハンドラー
+	 */
+	onOpenAivisSettings: () => void;
 };
 
 /**
@@ -78,6 +84,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 	onToggleMute,
 	onOpenVoiceChat,
 	onToggleStreamingMode,
+	onOpenAivisSettings,
 	onMenuOpenChange,
 }) => {
 	const { t } = useTranslation("chat");
@@ -125,6 +132,13 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 			icon: UserCircle,
 			label: t("selectModel"),
 			onClick: onOpenModelSelector,
+			isActive: false,
+		},
+		{
+			id: "aivis-settings",
+			icon: Settings,
+			label: "Aivis設定",
+			onClick: onOpenAivisSettings,
 			isActive: false,
 		},
 	];
