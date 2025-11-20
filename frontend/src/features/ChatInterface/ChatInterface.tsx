@@ -97,6 +97,9 @@ export const ChatInterface = forwardRef<
 
 		pushMessage({ text: trimmed, isUser: true, id: userMessageId });
 
+		// 送信後すぐにテキスト欄をクリア
+		setInput("");
+
 		// 会話履歴を準備（最新のユーザーメッセージも反映）
 		const conversationHistory: ConversationMessage[] = [
 			...messages
@@ -115,8 +118,6 @@ export const ChatInterface = forwardRef<
 			isStreamingMode,
 			aiMessageId, // AIメッセージIDを渡す
 		);
-
-		setInput("");
 	};
 
 	const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
