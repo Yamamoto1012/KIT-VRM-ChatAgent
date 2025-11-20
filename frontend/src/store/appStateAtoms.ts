@@ -9,6 +9,9 @@ export const isDirectChatQuestionAtom = atom<boolean>(false);
 // 音声チャット表示状態のatom
 export const showVoiceChatAtom = atom<boolean>(false);
 
+// Aivis設定モーダルの表示状態のatom
+export const showAivisSettingsAtom = atom<boolean>(false);
+
 // 思考中状態のatom
 export const isThinkingAtom = atom<boolean>(false);
 

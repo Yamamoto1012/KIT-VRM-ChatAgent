@@ -28,6 +28,8 @@ export type ModelConfig = {
 	thumbnailUrl?: string;
 	/** 音声合成用のスピーカーID（数値またはUUID） */
 	speakerId: number | string;
+	/** Aivis Cloud API用のモデルUUID（オプション） */
+	cloudModelUuid?: string;
 	/** デフォルトのモーションファイルパス（オプション） */
 	defaultMotion?: string;
 	/** モデルの回転 [x, y, z] (ラジアン) */
@@ -56,7 +58,8 @@ export const MODEL_CONFIGS: ModelConfig[] = [
 		description: "AI沢みのり",
 		vrmUrl: "/Model/KIT_2.0.vrm",
 		thumbnailUrl: "/thumbnails/AIzawa.png",
-		speakerId: 888753760,
+		speakerId: 1431611904,
+		cloudModelUuid: "e9339137-2ae3-4d41-9394-fb757a7e61e6",
 		defaultMotion: "/Motion/StandingIdle.vrma",
 		modelRotation: [0, 0, 0],
 		cameraConfig: DEFAULT_CAMERA_CONFIG,
