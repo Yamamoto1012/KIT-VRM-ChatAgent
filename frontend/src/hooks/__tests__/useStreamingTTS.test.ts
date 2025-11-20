@@ -199,4 +199,50 @@ describe("useStreamingTTS", () => {
 
 		expect(result.current.isReady).toBe(true);
 	});
+
+	it("should respect maxConcurrency", async () => {
+		// リクエストが解決されるのを制御するためのPromise
+		let resolveRequest: (value: unknown) => void;
+		const requestPromise = new Promise((resolve) => {
+			resolveRequest = resolve;
+		});
+
+		mockRequestTTS.mockReturnValue(requestPromise);
+
+		const { result } = renderHook(() => useStreamingTTS({ maxConcurrency: 2 }));
+
+		act(() => {
+			// 3つのチャンクを追加
+			result.current.addChunk("文1。文2。文3。");
+		});
+
+		// 状態更新を待つ
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+
+		// 3つのアイテムがキューにあるはず
+		expect(result.current.state.queue).toHaveLength(3);
+
+		// 最初の2つだけがGENERATING状態になるべき
+		const generatingItems = result.current.state.queue.filter(
+			(item) => item.status === "generating",
+		);
+		expect(generatingItems).toHaveLength(2);
+		expect(generatingItems[0].text).toBe("文1。");
+		expect(generatingItems[1].text).toBe("文2。");
+
+		// 3つ目はPENDINGのまま
+		expect(result.current.state.queue[2].status).toBe("pending");
+
+		// リクエストを解決
+		act(() => {
+			resolveRequest(new Blob());
+		});
+
+		// 状態更新を待つ
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+	});
 });
