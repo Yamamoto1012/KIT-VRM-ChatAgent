@@ -20,4 +20,3 @@ export const isStreamingModeAtom = atom<boolean>(true);
 
 // コントロールメニューの表示状態のatom
 export const isControlMenuOpenAtom = atom<boolean>(false);
-
