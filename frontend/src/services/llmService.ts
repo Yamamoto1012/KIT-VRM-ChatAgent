@@ -6,11 +6,18 @@ export type ConversationMessage = {
 	content: string;
 };
 
+// 非ストリーミングレスポンスの型定義
+export type QueryResponse = {
+	answer: string;
+	documentName?: string;
+};
+
 // ストリーミングレスポンスの型定義
 export type StreamChunk = {
 	id: string;
 	type: "content" | "error" | "done" | "start";
 	content?: string;
+	documentName?: string;
 	metadata?: Record<string, unknown>;
 	timestamp: string;
 };
@@ -126,14 +133,14 @@ export async function generateTextStream(
  * @param conversationId 会話ID
  * @param signal APIリクエストを中止するためのAbortSignal
  * @param language 応答言語
- * @returns 生成されたテキスト応答
+ * @returns 生成されたテキスト応答とドキュメント名
  */
 export async function generateTextNonStreaming(
 	query: string,
 	conversationHistory?: ConversationMessage[],
 	signal?: AbortSignal,
 	language: SupportedLanguage = "ja",
-): Promise<string> {
+): Promise<QueryResponse> {
 	const requestBody = {
 		query,
 		conversation_history: conversationHistory || [],
@@ -158,8 +165,11 @@ export async function generateTextNonStreaming(
 			);
 		}
 
-		const result = await response.json();
-		return result.answer || "応答を生成できませんでした。";
+		const result = (await response.json()) as QueryResponse;
+		return {
+			answer: result.answer || "応答を生成できませんでした。",
+			documentName: result.documentName,
+		};
 	} catch (error) {
 		if (error instanceof Error && error.name === "AbortError") {
 			console.log("Non-streaming generation aborted.");

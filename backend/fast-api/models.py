@@ -77,9 +77,48 @@ class QueryRequestWithHistory(BaseModel):
     """会話履歴を含むクエリリクエスト"""
     query: str = Field(..., description="ユーザーのクエリ")
     conversation_history: Optional[List[ConversationMessage]] = Field(
-        default=[], 
+        default=[],
         description="過去の会話履歴"
     )
     context: Optional[Dict[str, Any]] = Field(None, description="追加のコンテキスト情報")
     language: Optional[str] = Field("ja", description="言語設定")
     stream: Optional[bool] = Field(True, description="ストリーミング応答を使用するか")
+
+
+# RAGコーパス情報モデル
+class DataSourceInfo(BaseModel):
+    """データソース情報"""
+    name: str = Field(..., description="データソース名")
+    document_count: int = Field(..., description="文書数")
+    word_count: int = Field(..., description="単語数")
+    created_at: int = Field(..., description="作成日時（UNIXタイムスタンプ）")
+    updated_at: int = Field(..., description="更新日時（UNIXタイムスタンプ）")
+
+
+class CorpusStatistics(BaseModel):
+    """コーパス統計情報"""
+    total_documents: int = Field(..., description="総文書数")
+    total_tokens: int = Field(..., description="総トークン数（推定値）")
+    total_chunks: int = Field(0, description="総チャンク数（取得できない場合は0）")
+
+
+class RetrievalConfig(BaseModel):
+    """検索設定"""
+    top_k: Optional[int] = Field(None, description="Top-K値")
+    score_threshold: Optional[float] = Field(None, description="類似度閾値")
+    search_method: Optional[str] = Field(None, description="検索方法")
+
+
+class CorpusConfiguration(BaseModel):
+    """コーパス設定情報"""
+    embedding_model: Optional[str] = Field(None, description="埋め込みモデル名")
+    embedding_model_provider: Optional[str] = Field(None, description="埋め込みモデルプロバイダー")
+    indexing_technique: Optional[str] = Field(None, description="インデックス技術")
+    retrieval_config: Optional[RetrievalConfig] = Field(None, description="検索設定")
+
+
+class CorpusInfoResponse(BaseModel):
+    """RAGコーパス情報のレスポンスモデル"""
+    sources: List[DataSourceInfo] = Field(..., description="データソース一覧")
+    statistics: CorpusStatistics = Field(..., description="統計情報")
+    configuration: CorpusConfiguration = Field(..., description="設定情報")
