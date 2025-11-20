@@ -105,6 +105,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 			onClick: onToggleStreamingMode,
 			isActive: isStreamingMode,
 		},
+
 		{
 			id: "language",
 			icon: Languages,
