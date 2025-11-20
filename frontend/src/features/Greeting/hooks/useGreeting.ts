@@ -67,9 +67,16 @@ export const useGreeting = ({
 	/**
 	 * エラー発生時の処理
 	 */
-	const handleError = (error: Error) => {
-		console.error("Greeting playback error:", error);
-	};
+	const handleError = useCallback(
+		(error: Error) => {
+			console.error("Greeting playback error:", error);
+			// エラー発生時もグリーティングモードを終了して、表情制御を復帰させる
+			if (vrmWrapperRef.current?.endGreetingMode) {
+				vrmWrapperRef.current.endGreetingMode();
+			}
+		},
+		[vrmWrapperRef],
+	);
 
 	// useGreetingAudio フックを使用
 	const { playGreeting, stopGreeting, isPlaying, isLoading } = useGreetingAudio(

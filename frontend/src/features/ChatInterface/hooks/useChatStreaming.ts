@@ -167,6 +167,15 @@ export const useChatStreaming = ({
 		stopAudioPlayback,
 	]);
 
+	// vrmWrapperRefの状態を監視
+	useEffect(() => {
+		if (!vrmWrapperRef?.current) {
+			console.warn("[useChatStreaming] vrmWrapperRef.current is null on mount");
+		} else {
+			console.log("[useChatStreaming] vrmWrapperRef is ready");
+		}
+	}, [vrmWrapperRef]);
+
 	// センチメント分析の結果をVRMに反映する
 	const handleSentimentChange = (result: SentimentAnalysisResult) => {
 		// 感情分析結果をVRMの表情に反映
@@ -174,6 +183,10 @@ export const useChatStreaming = ({
 			vrmWrapperRef.current.setExpressionBySentiment(result.category, {
 				forceUpdate: true,
 			});
+		} else {
+			console.warn(
+				"[useChatStreaming] vrmWrapperRef or setExpressionBySentiment is missing",
+			);
 		}
 	};
 

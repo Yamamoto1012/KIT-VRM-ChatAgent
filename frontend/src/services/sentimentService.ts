@@ -7,8 +7,7 @@ import type {
 	SentimentResponse,
 } from "../types/sentiment";
 
-const API_BASE_URL =
-	import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 class SentimentService {
 	private baseUrl: string;
@@ -59,7 +58,9 @@ class SentimentService {
 				typeof sentimentResult.score !== "number" ||
 				!sentimentResult.category
 			) {
-				throw new Error("不正なレスポンス形式: scoreまたはcategoryが無効です");
+				throw new Error(
+					`不正なレスポンス形式: score(${typeof sentimentResult.score})またはcategory(${sentimentResult.category})が無効です`,
+				);
 			}
 
 			// 既存のインターフェースに合わせて変換
@@ -71,6 +72,7 @@ class SentimentService {
 
 			return result;
 		} catch (error) {
+			console.error("Sentiment Analysis Error:", error);
 			if (error instanceof Error) {
 				throw error;
 			}

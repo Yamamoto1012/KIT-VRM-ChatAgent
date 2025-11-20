@@ -308,26 +308,6 @@ export const getExpressionWithVariation = (
 	return variations[randomIndex];
 };
 
-/**
- * 表情プリセットから感情カテゴリを推定する
- * @param preset - 表情プリセット
- * @returns 推定された感情カテゴリ
- */
-export const getSentimentFromPreset = (
-	preset: ExpressionPreset,
-): SentimentCategory | null => {
-	switch (preset) {
-		case "happy":
-		case "surprised":
-			return "mild_positive";
-		case "sad":
-		case "angry":
-			return "mild_negative";
-		default:
-			return "neutral";
-	}
-};
-
 // ========================================
 // Pure Functions - ニュートラル表情制御
 // ========================================

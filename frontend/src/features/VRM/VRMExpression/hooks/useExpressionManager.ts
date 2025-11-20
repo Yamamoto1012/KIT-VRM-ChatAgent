@@ -37,7 +37,6 @@ import {
 	getExpressionForPhoneme,
 	getExpressionWithVariation,
 	getFallbackExpression,
-	getSentimentFromPreset,
 	resetAllExpressions,
 	resetBasicExpressions,
 	resetLipSyncExpressions,
@@ -129,6 +128,14 @@ export const useExpressionManager = (): ExpressionManagerActions &
 		sentimentExpressionBeforeLipSync,
 		setSentimentExpressionBeforeLipSync,
 	] = useAtom(sentimentExpressionBeforeLipSyncAtom);
+
+	// 現在の感情をRefで追跡
+	const currentSentimentRef = useRef<SentimentCategory | null>(
+		currentSentiment,
+	);
+	useEffect(() => {
+		currentSentimentRef.current = currentSentiment;
+	}, [currentSentiment]);
 
 	const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
@@ -356,7 +363,7 @@ export const useExpressionManager = (): ExpressionManagerActions &
 			const { enableRandomVariation = true, forceUpdate = false } = options;
 
 			// グリーティングモード中は感情による表情変更をスキップ
-			if (isGreetingMode) {
+			if (isGreetingMode && !forceUpdate) {
 				return false;
 			}
 
@@ -409,22 +416,37 @@ export const useExpressionManager = (): ExpressionManagerActions &
 				const success = setExpression(targetPreset, targetWeight);
 				if (success) {
 					setCurrentSentiment(sentiment);
+				} else {
 				}
 				return success;
 			}
 
 			resetBasicExpressions(vrm);
 
+			// 表情を設定
+			const success = setExpression(targetPreset, targetWeight);
+			if (success) {
+				setCurrentSentiment(sentiment);
+			} else {
+				console.error(
+					`[ExpressionManager] Failed to set expression: ${targetPreset}`,
+				);
+			}
+
 			// 自動リセット機能
 			if (autoReset && duration && duration > 0) {
 				const resetTimerId = setTimeout(() => {
-					if (currentSentiment === getSentimentFromPreset(targetPreset)) {
+					// Refを使用して最新の感情状態を確認
+					if (currentSentimentRef.current === sentiment) {
 						// スムーズにneutralに戻す
-						const resetSteps = 3;
-						const resetStepDuration = 300;
+						const resetSteps = 10; // ステップ数を増やしてより滑らかに
+						const resetStepDuration = 100; // 間隔を短く
 
 						for (let step = 0; step < resetSteps; step++) {
 							const timerId = setTimeout(() => {
+								// アニメーション中も感情が変わっていないかチェック
+								if (currentSentimentRef.current !== sentiment) return;
+
 								if (step >= resetSteps - 1) {
 									setExpression(
 										"neutral",
@@ -433,10 +455,12 @@ export const useExpressionManager = (): ExpressionManagerActions &
 									setCurrentSentiment(null);
 								} else {
 									const progress = 1 - step / (resetSteps - 1);
-									const currentStepWeight = targetWeight * progress;
+									// イージング関数を適用してより自然に (ease-out)
+									const easedProgress = 1 - (1 - progress) * (1 - progress);
+									const currentStepWeight = targetWeight * easedProgress;
 
-									if (currentStepWeight > 0.1) {
-										setExpression(currentExpression, currentStepWeight);
+									if (currentStepWeight > 0.05) {
+										setExpression(targetPreset, currentStepWeight);
 									}
 								}
 							}, step * resetStepDuration);
@@ -449,15 +473,13 @@ export const useExpressionManager = (): ExpressionManagerActions &
 				timersRef.current.set("sentiment-auto-reset", resetTimerId);
 			}
 
-			setCurrentSentiment(sentiment);
-			return true;
+			return success;
 		},
 		[
 			vrm,
 			isGreetingMode,
 			currentSentiment,
 			lastMicroExpressionTime,
-			currentExpression,
 			setExpression,
 			setLastMicroExpressionTime,
 			setCurrentSentiment,
