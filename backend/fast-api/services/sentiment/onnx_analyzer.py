@@ -32,9 +32,10 @@ except ImportError:
 class ONNXSentimentAnalyzer:
     """ONNX形式の軽量感情分析モデル"""
     
-    def __init__(self, model_path: Optional[str] = None, tokenizer_path: Optional[str] = None):
+    def __init__(self, model_path: Optional[str] = None, tokenizer_path: Optional[str] = None, temperature: float = 2.0):
         self.model_path = model_path or self._get_default_model_path()
         self.tokenizer_path = tokenizer_path or self._get_default_tokenizer_path()
+        self.temperature = temperature
         self.session = None
         self.tokenizer = None
         self.max_length = 128
@@ -171,7 +172,7 @@ class ONNXSentimentAnalyzer:
             
             # ソフトマックスで確率に変換
             logits = outputs[0][0]
-            probs = self._softmax(logits)
+            probs = self._softmax(logits, self.temperature)
             
             # スコアとカテゴリを決定
             score, category = self._probs_to_score_and_category(probs)
@@ -198,10 +199,13 @@ class ONNXSentimentAnalyzer:
             logger.error(f"ONNX推論エラー: {e}")
             raise
     
-    def _softmax(self, logits: np.ndarray) -> np.ndarray:
-        """ソフトマックス関数の実装"""
+    def _softmax(self, logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
+        """ソフトマックス関数の実装（温度パラメータ付き）"""
+        # 温度スケーリング（temperature > 1 で分布が平滑化され、極端な値が出にくくなる）
+        scaled_logits = logits / temperature
+        
         # 数値安定性のためのシフト
-        shifted_logits = logits - np.max(logits)
+        shifted_logits = scaled_logits - np.max(scaled_logits)
         exp_logits = np.exp(shifted_logits)
         return exp_logits / np.sum(exp_logits)
     

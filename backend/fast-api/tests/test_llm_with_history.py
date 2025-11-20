@@ -76,7 +76,10 @@ class TestLLMWithHistory:
     def test_query_endpoint_with_history_non_streaming(self, mock_dify, sample_request_with_history):
         """非ストリーミングモードでの会話履歴テスト"""
         # Difyのレスポンスをモック
-        mock_dify.return_value = "金沢工業大学には工学部、情報フロンティア学部、建築学部、バイオ・化学部があります。"
+        mock_dify.return_value = {
+            "response": "金沢工業大学には工学部、情報フロンティア学部、建築学部、バイオ・化学部があります。",
+            "documentName": None
+        }
         
         response = client.post("/api/llm/query", json=sample_request_with_history)
         
@@ -88,20 +91,16 @@ class TestLLMWithHistory:
         # Difyが正しい引数で呼ばれたかチェック
         mock_dify.assert_called_once()
         call_args = mock_dify.call_args
-        inputs = call_args[1]["inputs"]  # キーワード引数から取得
+        inputs = call_args[0][1]  # 位置引数から取得 (2番目の引数)
         
         assert "user_input" in inputs
         assert inputs["user_input"] == "それについてもっと詳しく教えて"
         
-        # 分割された会話コンテキストが含まれていることを確認
-        assert "conversation_context_1" in inputs
-        assert "conversation_context_2" in inputs
-        assert "conversation_context_3" in inputs
-        assert "conversation_context_4" in inputs
-        assert "conversation_context_5" in inputs
+        # 会話コンテキストが含まれていることを確認
+        assert "conversation_context" in inputs
         
-        # 少なくとも最初のチャンクに会話履歴が含まれていることを確認
-        combined_context = inputs["conversation_context_1"] + inputs["conversation_context_2"]
+        # 会話履歴が含まれていることを確認
+        combined_context = inputs["conversation_context"]
         assert "ユーザー:" in combined_context
         assert "アシスタント:" in combined_context
 
@@ -156,7 +155,10 @@ class TestLLMWithHistory:
         }
         
         with patch('routers.llm.call_dify_workflow_blocking') as mock_dify:
-            mock_dify.return_value = "金沢工業大学は1965年に設立された大学です。"
+            mock_dify.return_value = {
+                "response": "金沢工業大学は1965年に設立された大学です。",
+                "documentName": None
+            }
             
             response = client.post("/api/llm/query", json=request_data)
             
@@ -164,10 +166,8 @@ class TestLLMWithHistory:
             
             # 空の履歴でも正常に動作することを確認
             call_args = mock_dify.call_args
-            inputs = call_args[1]["inputs"]
-            # 全ての分割フィールドが空であることを確認
-            for i in range(1, 6):
-                assert inputs[f"conversation_context_{i}"] == ""
+            inputs = call_args[0][1]
+            assert inputs["conversation_context"] == ""
 
     def test_query_endpoint_without_history_field(self):
         """conversation_historyフィールドがない場合のテスト（後方互換性）"""
@@ -178,7 +178,10 @@ class TestLLMWithHistory:
         }
         
         with patch('routers.llm.call_dify_workflow_blocking') as mock_dify:
-            mock_dify.return_value = "テスト応答"
+            mock_dify.return_value = {
+                "response": "テスト応答",
+                "documentName": None
+            }
             
             response = client.post("/api/llm/query", json=request_data)
             
@@ -186,10 +189,8 @@ class TestLLMWithHistory:
             
             # 履歴フィールドがなくても正常に動作することを確認
             call_args = mock_dify.call_args
-            inputs = call_args[1]["inputs"]
-            # 全ての分割フィールドが空であることを確認
-            for i in range(1, 6):
-                assert inputs[f"conversation_context_{i}"] == ""
+            inputs = call_args[0][1]
+            assert inputs["conversation_context"] == ""
 
     @patch('routers.llm.call_dify_workflow_blocking')
     def test_voice_mode_endpoint_with_history(self, mock_dify, sample_conversation_history):
@@ -201,7 +202,10 @@ class TestLLMWithHistory:
             "language": "ja"
         }
         
-        mock_dify.return_value = "音声モードでの応答です。"
+        mock_dify.return_value = {
+            "response": "音声モードでの応答です。",
+            "documentName": None
+        }
         
         response = client.post("/api/llm/voice_mode_answer", json=request_data)
         
@@ -211,13 +215,11 @@ class TestLLMWithHistory:
         
         # 会話履歴が正しく処理されていることを確認
         call_args = mock_dify.call_args
-        inputs = call_args[1]["inputs"]
+        inputs = call_args[0][1]
         
-        # 分割された会話コンテキストが含まれていることを確認
-        combined_context = ""
-        for i in range(1, 6):
-            combined_context += inputs[f"conversation_context_{i}"]
-        assert "ユーザー:" in combined_context
+        # 会話コンテキストが含まれていることを確認
+        assert "conversation_context" in inputs
+        assert "ユーザー:" in inputs["conversation_context"]
 
     def test_format_conversation_history_function(self):
         """format_conversation_history関数の単体テスト"""
@@ -245,6 +247,7 @@ class TestLLMWithHistory:
         """文字数制限ありでのformat_conversation_history関数テスト"""
         from routers.llm import format_conversation_history
         
+        # 文字数制限のテスト
         history = [
             ConversationMessage(role="user", content="短いメッセージ"),
             ConversationMessage(role="assistant", content="これは非常に長いメッセージです。" * 10),
@@ -256,54 +259,15 @@ class TestLLMWithHistory:
         assert "最新のメッセージ" in result
         assert len(result) <= 50
 
-    def test_split_conversation_context_function(self):
-        """split_conversation_context関数の単体テスト"""
-        from routers.llm import split_conversation_context
+    def test_get_conversation_context_function(self):
+        """get_conversation_context関数の単体テスト"""
+        from routers.llm import get_conversation_context
         
-        # 短いコンテキスト
-        short_context = "ユーザー: こんにちは\nアシスタント: こんにちは！"
-        result = split_conversation_context(short_context)
+        context = "テストコンテキスト"
+        result = get_conversation_context(context)
         
-        assert "conversation_context_1" in result
-        assert result["conversation_context_1"] == short_context
-        assert result["conversation_context_2"] == ""
-        assert result["conversation_context_3"] == ""
-        assert result["conversation_context_4"] == ""
-        assert result["conversation_context_5"] == ""
-
-    def test_split_conversation_context_long_text(self):
-        """長いテキストの分割テスト"""
-        from routers.llm import split_conversation_context
-        
-        # 250文字を超える長いコンテキスト
-        long_context = "ユーザー: " + "あ" * 300 + "\nアシスタント: " + "い" * 300
-        result = split_conversation_context(long_context, max_chunk_size=250)
-        
-        # 複数のチャンクに分割されていることを確認
-        assert len(result["conversation_context_1"]) == 250
-        assert len(result["conversation_context_2"]) == 250
-        assert len(result["conversation_context_3"]) > 0
-        
-        # 全チャンクを結合すると元のテキストになることを確認
-        combined = ""
-        for i in range(1, 6):
-            combined += result[f"conversation_context_{i}"]
-        assert combined.startswith(long_context)
-
-    def test_split_conversation_context_edge_cases(self):
-        """split_conversation_context関数のエッジケーステスト"""
-        from routers.llm import split_conversation_context
-        
-        # 空のコンテキスト
-        empty_result = split_conversation_context("")
-        for i in range(1, 6):
-            assert empty_result[f"conversation_context_{i}"] == ""
-        
-        # ちょうど250文字のコンテキスト
-        exact_context = "a" * 250
-        exact_result = split_conversation_context(exact_context)
-        assert exact_result["conversation_context_1"] == exact_context
-        assert exact_result["conversation_context_2"] == ""
+        assert "conversation_context" in result
+        assert result["conversation_context"] == context
 
     def test_query_non_streaming_endpoint_with_history(self, sample_conversation_history):
         """非ストリーミング専用エンドポイントでの会話履歴テスト"""
@@ -314,7 +278,10 @@ class TestLLMWithHistory:
         }
         
         with patch('routers.llm.call_dify_workflow_blocking') as mock_dify:
-            mock_dify.return_value = "詳細な情報をお答えします。"
+            mock_dify.return_value = {
+                "response": "詳細な情報をお答えします。",
+                "documentName": None
+            }
             
             response = client.post("/api/llm/query_non_streaming", json=request_data)
             
@@ -324,12 +291,7 @@ class TestLLMWithHistory:
             
             # 会話履歴が含まれていることを確認
             call_args = mock_dify.call_args
-            inputs = call_args[1]["inputs"]
+            inputs = call_args[0][1]
             
-            # 分割されたコンテキストのいずれかに内容があることを確認
-            has_content = False
-            for i in range(1, 6):
-                if inputs[f"conversation_context_{i}"] != "":
-                    has_content = True
-                    break
-            assert has_content
+            assert "conversation_context" in inputs
+            assert inputs["conversation_context"] != ""

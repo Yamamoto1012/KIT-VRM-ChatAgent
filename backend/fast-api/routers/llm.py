@@ -69,7 +69,7 @@ def format_conversation_history(
     return "\n".join(formatted_messages)
 
 
-def get_conversation_context(context: str) -> dict:
+def get_conversation_context(context: str) -> Dict[str, Any]:
     """
     会話コンテキストを単一フィールドで返す（Difyの段落対応により分割不要）
     """
@@ -260,7 +260,7 @@ async def process_query(request: QueryRequestWithHistory):
             request.conversation_history or []
         )
         
-        # 会話コンテキストを単一フィールドで設定
+        # 会話コンテキストを設定
         context_data = get_conversation_context(history_context)
         
         inputs = {
@@ -311,7 +311,7 @@ async def process_voice_mode_answer(request: QueryRequestWithHistory):
             request.conversation_history or []
         )
         
-        # 会話コンテキストを単一フィールドで設定
+        # 会話コンテキストを設定
         context_data = get_conversation_context(history_context)
         
         inputs = {
@@ -367,7 +367,7 @@ async def process_query_non_streaming(request: QueryRequestWithHistory):
             request.conversation_history or []
         )
         
-        # 会話コンテキストを単一フィールドで設定
+        # 会話コンテキストを設定
         context_data = get_conversation_context(history_context)
         
         inputs = {
