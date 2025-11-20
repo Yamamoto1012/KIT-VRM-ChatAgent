@@ -76,13 +76,13 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	return (
 		<div
 			style={{ backgroundColor: colors.primary }}
-			className="px-3 py-2 md:px-3 md:py-2"
+			className="px-4 py-3 md:px-4 md:py-3 border-t border-white/10"
 		>
 			{/* 録音中の波形表示 */}
 			{isRecording && <VoiceWaveform isRecording={isRecording} />}
 
 			{/* 入力エリア */}
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-3">
 				<div className="relative flex-1">
 					<textarea
 						ref={textareaRef}
@@ -96,8 +96,8 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						disabled={isThinking || isRecording || isCorrectingTypo}
 						rows={1}
 						className={`
-							resize-none w-full rounded-md
-							px-3 py-3 md:px-3 md:py-2 pr-32
+							resize-none w-full rounded-xl
+							px-4 py-3 md:px-4 md:py-3 pr-32
 							text-base md:text-base
 							bg-white
 							focus-visible:ring-2
@@ -105,10 +105,11 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 							transition-all duration-300
 							touch-manipulation
 							align-middle
-							${isRecording ? "bg-red-50 border-red-200" : "border-0"}
+							shadow-sm
+							${isRecording ? "bg-red-50 border-red-200 border" : "border border-gray-200"}
 							${
 								isCorrectingTypo
-									? "border-2 border-purple-200 bg-gradient-to-r from-purple-50/30 to-blue-50/30 shadow-sm"
+									? "border-2 border-purple-200 bg-gradient-to-r from-purple-50/30 to-blue-50/30 shadow-md"
 									: ""
 							}
 						`}
@@ -130,7 +131,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 				{/* ボタンコンテナ */}
 				<TooltipProvider delayDuration={300}>
-					<div className="flex gap-2 flex-shrink-0">
+					<div className="flex gap-2.5 flex-shrink-0">
 						{/* 誤字修正ボタン */}
 						{onCorrectTypo && (
 							<Tooltip>
@@ -146,11 +147,15 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 											!inputValue.trim()
 										}
 										className={`
-											flex-shrink-0
-											h-12 w-12 md:h-11 md:w-11
-											touch-manipulation
-											${isCorrectingTypo ? "animate-pulse" : ""}
-										`}
+										flex-shrink-0
+										h-11 w-11 md:h-10 md:w-10
+										touch-manipulation
+										rounded-xl
+										shadow-sm hover:shadow-md
+										transition-all duration-200
+										hover:scale-105
+										${isCorrectingTypo ? "animate-pulse" : ""}
+									`}
 									>
 										<Wand2 className="h-5 w-5 md:h-4 md:w-4" />
 									</Button>
@@ -171,11 +176,15 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 									size="icon"
 									onClick={onToggleRecording}
 									className={`
-										flex-shrink-0
-										h-12 w-12 md:h-11 md:w-11
-										touch-manipulation
-										${isRecording ? "animate-pulse" : ""}
-									`}
+									flex-shrink-0
+									h-11 w-11 md:h-10 md:w-10
+									touch-manipulation
+									rounded-xl
+									shadow-sm hover:shadow-md
+									transition-all duration-200
+									hover:scale-105
+									${isRecording ? "animate-pulse" : ""}
+								`}
 									disabled={isThinking}
 								>
 									{isRecording ? (
@@ -199,10 +208,12 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 									onClick={onSend}
 									disabled={isThinking || !inputValue.trim() || isRecording}
 									className="
-										text-white rounded-md hover:scale-95 duration-150
-										h-12 w-12 md:h-11 md:w-11
-										touch-manipulation
-									"
+									text-white rounded-xl hover:scale-105 duration-200
+									h-11 w-11 md:h-10 md:w-10
+									touch-manipulation
+									shadow-md hover:shadow-lg
+									transition-all
+								"
 									style={{
 										backgroundColor: colors.primary,
 										borderColor: colors.primary,
@@ -225,9 +236,13 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 									onClick={onStop}
 									disabled={!isThinking}
 									className="
-										h-12 w-12 md:h-11 md:w-11
-										touch-manipulation
-									"
+									h-11 w-11 md:h-10 md:w-10
+									touch-manipulation
+									rounded-xl
+									shadow-sm hover:shadow-md
+									transition-all duration-200
+									hover:scale-105
+								"
 								>
 									<SquareSlash className="h-5 w-5 md:h-4 md:w-4" />
 								</Button>
