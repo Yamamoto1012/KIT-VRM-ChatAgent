@@ -38,7 +38,6 @@ import {
 	getExpressionWithVariation,
 	getFallbackExpression,
 	resetAllExpressions,
-	resetBasicExpressions,
 	resetLipSyncExpressions,
 	selectNeutralMicroExpression,
 	setMultipleLipSyncExpressions,
@@ -150,11 +149,12 @@ export const useExpressionManager = (): ExpressionManagerActions &
 	}, [vrm, setAvailableExpressions]);
 
 	useEffect(() => {
+		const timers = timersRef.current;
 		return () => {
-			for (const timer of timersRef.current.values()) {
+			for (const timer of timers.values()) {
 				clearTimeout(timer);
 			}
-			timersRef.current.clear();
+			timers.clear();
 		};
 	}, []);
 
@@ -416,14 +416,61 @@ export const useExpressionManager = (): ExpressionManagerActions &
 				const success = setExpression(targetPreset, targetWeight);
 				if (success) {
 					setCurrentSentiment(sentiment);
-				} else {
 				}
 				return success;
 			}
 
-			resetBasicExpressions(vrm);
+			// 既存の表情をリセットせず、クロスフェードで遷移させる
 
-			// 表情を設定
+			// 遷移設定
+			const transitionDuration = 500; // 500msかけて遷移
+			const steps = 20;
+			const stepInterval = transitionDuration / steps;
+
+			const startPreset = currentExpression;
+			const startWeight = currentWeight;
+
+			// 遷移アニメーション開始
+			for (let step = 0; step <= steps; step++) {
+				const timerId = setTimeout(() => {
+					// 途中で感情が変わった場合は中断（最新の感情が優先されるため）
+					if (currentSentimentRef.current !== sentiment) return;
+
+					const progress = step / steps;
+					// イージング (Ease Out Quad)
+					const t = 1 - (1 - progress) * (1 - progress);
+
+					if (startPreset !== targetPreset && startPreset !== "neutral") {
+						// 異なる表情への遷移：クロスフェード
+						// 古い表情をフェードアウト
+						safeSetExpression(vrm, startPreset, startWeight * (1 - t), false);
+						// 新しい表情をフェードイン
+						const currentTargetWeight = targetWeight * t;
+						safeSetExpression(vrm, targetPreset, currentTargetWeight, true);
+
+						// Atomの更新は最後だけ、または適度な間隔で行うのが理想だが
+						// ここではシンプルに最後のステップで状態を確定させる
+						if (step === steps) {
+							setCurrentExpression(targetPreset);
+							setCurrentWeight(targetWeight);
+						}
+					} else {
+						// 同じ表情、またはNeutralからの遷移
+						const newWeight = startWeight + (targetWeight - startWeight) * t;
+						setExpression(targetPreset, newWeight);
+					}
+				}, step * stepInterval);
+
+				timersRef.current.set(
+					`sentiment-transition-${sentiment}-${step}`,
+					timerId,
+				);
+			}
+
+			setCurrentSentiment(sentiment);
+			const success = true; // アニメーション開始をもって成功とする
+
+			/*
 			const success = setExpression(targetPreset, targetWeight);
 			if (success) {
 				setCurrentSentiment(sentiment);
@@ -432,6 +479,7 @@ export const useExpressionManager = (): ExpressionManagerActions &
 					`[ExpressionManager] Failed to set expression: ${targetPreset}`,
 				);
 			}
+			*/
 
 			// 自動リセット機能
 			if (autoReset && duration && duration > 0) {
@@ -483,6 +531,10 @@ export const useExpressionManager = (): ExpressionManagerActions &
 			setExpression,
 			setLastMicroExpressionTime,
 			setCurrentSentiment,
+			currentExpression,
+			currentWeight,
+			setCurrentExpression,
+			setCurrentWeight,
 		],
 	);
 
