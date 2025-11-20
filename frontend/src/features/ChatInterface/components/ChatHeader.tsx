@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { useCharacterTheme } from "@/hooks/useCharacterTheme";
 import { RefreshCw } from "lucide-react";
 import type React from "react";
@@ -17,17 +16,14 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ onReset }) => {
 			className="p-3 flex items-center justify-between"
 		>
 			<div className="flex items-center">
-				<Button
-					variant="ghost"
-					size="icon"
-					className={`rounded-full ${classes.neutral.text} hover:bg-white/20`}
+				<button
+					type="button"
 					onClick={onReset}
+					className={`flex items-center gap-2 ${classes.neutral.text} hover:bg-white/20 px-2 py-1 rounded-lg transition-all duration-200 group`}
 				>
-					<RefreshCw className="h-5 w-5" />
-				</Button>
-				<span className={`ml-2 font-medium ${classes.neutral.text}`}>
-					{t("restartConversation")}
-				</span>
+					<RefreshCw className="h-5 w-5 group-hover:rotate-180 transition-transform duration-500" />
+					<span className="ml-2 font-medium">{t("restartConversation")}</span>
+				</button>
 			</div>
 		</div>
 	);
