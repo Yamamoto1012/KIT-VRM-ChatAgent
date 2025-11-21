@@ -10,6 +10,7 @@ export type ConversationMessage = {
 export type QueryResponse = {
 	answer: string;
 	documentName?: string;
+	emotion_label?: string;
 };
 
 // ストリーミングレスポンスの型定義
@@ -18,6 +19,7 @@ export type StreamChunk = {
 	type: "content" | "error" | "done" | "start";
 	content?: string;
 	documentName?: string;
+	emotion_label?: string;
 	metadata?: Record<string, unknown>;
 	timestamp: string;
 };
@@ -105,6 +107,7 @@ export async function generateTextStream(
 				if (jsonString) {
 					try {
 						const chunk = JSON.parse(jsonString) as StreamChunk;
+						// console.log("[llmService] Parsed chunk:", chunk);
 						onChunk?.(chunk);
 					} catch (e) {
 						console.error(
@@ -169,6 +172,7 @@ export async function generateTextNonStreaming(
 		return {
 			answer: result.answer || "応答を生成できませんでした。",
 			documentName: result.documentName,
+			emotion_label: result.emotion_label,
 		};
 	} catch (error) {
 		if (error instanceof Error && error.name === "AbortError") {
