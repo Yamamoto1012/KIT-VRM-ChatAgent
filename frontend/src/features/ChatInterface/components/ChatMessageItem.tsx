@@ -18,14 +18,14 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 	const aiAvatarSrc = modelConfig.thumbnailUrl ?? "/chatIcon.png";
 	return (
 		<div
-			className={`flex items-center gap-3 ${
+			className={`flex items-start gap-3 mb-4 animate-in slide-in-from-bottom-2 fade-in duration-500 ${
 				message.isUser ? "flex-row-reverse" : ""
 			}`}
 		>
 			<div className="flex-shrink-0">
 				{message.isUser ? (
 					<Avatar
-						className="h-10 w-10 rounded-full border-2 border-white"
+						className="h-10 w-10 rounded-full border-2 border-white/50 ring-2 ring-white/20 shadow-md"
 						style={{ backgroundColor: colors.surface }}
 					>
 						<AvatarFallback
@@ -48,7 +48,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 					</Avatar>
 				) : (
 					<Avatar
-						className="h-10 w-10 rounded-full border-2 border-white"
+						className="h-10 w-10 rounded-full border-2 border-white/50 ring-2 ring-white/20 shadow-md"
 						style={{ backgroundColor: colors.primary }}
 					>
 						<AvatarImage src={aiAvatarSrc} />
@@ -62,10 +62,9 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 			</div>
 			<div
 				className={`rounded-2xl p-3 px-4 max-w-[80%] shadow-sm ${
-					message.isUser
-						? `${classes.secondary.bg} text-left`
-						: "bg-white text-left"
+					message.isUser ? "text-white text-left" : "bg-white text-left"
 				} ${message.isStreaming ? "animate-pulse-subtle" : ""}`}
+				style={message.isUser ? { backgroundColor: colors.primary } : undefined}
 			>
 				<div className="text-gray-800 relative">
 					{message.text}

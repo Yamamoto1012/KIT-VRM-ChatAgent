@@ -59,15 +59,17 @@ export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
 	return (
 		<div
 			className="
-			w-md h-full 
+			w-full h-full 
 			md:max-w-lg md:h-[70vh] 
 			lg:h-[75vh] 
 			xl:h-[80vh] 
 			md:max-h-[600px] lg:max-h-[650px] xl:max-h-[700px] 
 			flex flex-col 
-			rounded-none md:rounded-lg 
-			overflow-hidden 
-			shadow-none md:shadow-xl
+			relative
+			bg-white/5 backdrop-blur-[2px]
+			border border-white/20 rounded-[2rem]
+			shadow-sm
+			overflow-hidden
 		"
 		>
 			<ChatHeader onReset={onReset} />
@@ -76,7 +78,7 @@ export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
 				isThinking={isThinking}
 				messagesEndRef={messagesEndRef}
 			/>
-			<ChatSelectButtons onSelect={onSelect} />
+			{messages.length === 0 && <ChatSelectButtons onSelect={onSelect} />}
 			<ChatInputArea
 				inputValue={inputValue}
 				isThinking={isThinking}
