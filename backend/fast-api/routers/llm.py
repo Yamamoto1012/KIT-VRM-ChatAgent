@@ -173,11 +173,16 @@ async def stream_dify_response(
                                 outputs = data.get("data", {}).get("outputs", {})
                                 logger.info(f"Workflow finished outputs keys: {list(outputs.keys())}")
                                 logger.info(f"Workflow finished outputs: {outputs}")
+                                # documentNameがリストの場合は文字列に結合
+                                doc_name = outputs.get("documentName")
+                                if isinstance(doc_name, list):
+                                    doc_name = ", ".join(str(x) for x in doc_name)
+
                                 yield json.dumps({
                                     "id": data.get("task_id", ""),
                                     "type": "done",
                                     "content": "",
-                                    "documentName": outputs.get("documentName"),
+                                    "documentName": doc_name,
                                     "emotion_label": outputs.get("emotion_label"),
                                     "metadata": {
                                         # outputsからresponse, documentName, emotion_labelを除外してメタデータとして送信
@@ -251,9 +256,15 @@ async def call_dify_workflow_blocking(
         result = response.json()
         logger.info(f"Dify blocking response: {result}")
         outputs = result.get("data", {}).get("outputs", {})
+        
+        # documentNameがリストの場合は文字列に結合
+        doc_name = outputs.get("documentName")
+        if isinstance(doc_name, list):
+            doc_name = ", ".join(str(x) for x in doc_name)
+
         return {
             "response": outputs.get("response", "応答を生成できませんでした。"),
-            "documentName": outputs.get("documentName"),
+            "documentName": doc_name,
             "emotion_label": outputs.get("emotion_label")
         }
 

@@ -15,6 +15,7 @@ export type Message = {
 	isUser: boolean;
 	speakText?: string;
 	isStreaming?: boolean;
+	documentName?: string;
 };
 
 /**
@@ -77,6 +78,7 @@ export const addMessageAtom = atom(
 			isUser: boolean;
 			speakText?: string;
 			isStreaming?: boolean;
+			documentName?: string;
 		},
 	) => {
 		const currentMessages = get(messagesAtom);
@@ -86,6 +88,7 @@ export const addMessageAtom = atom(
 			isUser: payload.isUser,
 			speakText: payload.speakText,
 			isStreaming: payload.isStreaming,
+			documentName: payload.documentName,
 		};
 		set(messagesAtom, [...currentMessages, newMessage]);
 	},

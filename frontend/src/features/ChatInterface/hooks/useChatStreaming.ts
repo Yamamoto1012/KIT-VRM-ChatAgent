@@ -498,7 +498,10 @@ export const useChatStreaming = ({
 									// アニメーション完了時の最終処理
 									updateMessage({
 										id: aiMessageId,
-										updates: { isStreaming: false },
+										updates: {
+											isStreaming: false,
+											documentName: chunk.documentName,
+										},
 									});
 									// isLoading.current は既に false に設定済み
 									isGenerating.current = false;
@@ -571,7 +574,10 @@ export const useChatStreaming = ({
 						}
 						updateMessage({
 							id: aiMessageId,
-							updates: { isStreaming: false },
+							updates: {
+								isStreaming: false,
+								documentName: response.documentName,
+							},
 						});
 						isGenerating.current = false;
 					};
