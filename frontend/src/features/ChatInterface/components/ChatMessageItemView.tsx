@@ -5,6 +5,7 @@ import type {
 	CharacterThemeColors,
 } from "@/types/characterTheme";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { BlinkingCursor } from "./BlinkingCursor";
 
 export type ChatMessageItemViewProps = {
@@ -26,6 +27,7 @@ export const ChatMessageItemView: React.FC<ChatMessageItemViewProps> = ({
 	documentNames,
 	onSourceClick,
 }) => {
+	const { t } = useTranslation();
 	return (
 		<div
 			className={`flex items-start gap-3 mb-4 animate-in slide-in-from-bottom-2 fade-in duration-500 ${
@@ -77,7 +79,7 @@ export const ChatMessageItemView: React.FC<ChatMessageItemViewProps> = ({
 				style={message.isUser ? { backgroundColor: colors.primary } : undefined}
 			>
 				<div className="text-gray-800 relative">
-					{message.text}
+					{message.translationKey ? t(message.translationKey) : message.text}
 					{message.isStreaming && !message.isUser && (
 						<BlinkingCursor className="inline-block" />
 					)}

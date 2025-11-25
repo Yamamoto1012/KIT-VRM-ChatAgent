@@ -137,7 +137,7 @@ export const ControlButtonsView: FC<ControlButtonsViewProps> = ({
 		{
 			id: "aivis-settings",
 			icon: Settings,
-			label: "Aivis設定",
+			label: t("aivisSettings"),
 			onClick: onOpenAivisSettings,
 			isActive: false,
 		},

@@ -96,7 +96,9 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 								initial={{ opacity: 0, y: 10, scale: 0.98 }}
 								animate={{ opacity: 1, y: 0, scale: 1 }}
 								transition={{ duration: 0.2, delay: index * 0.05 }}
-								className={`flex gap-2 ${message.isUser ? "justify-end" : "justify-start"}`}
+								className={`flex gap-2 ${
+									message.isUser ? "justify-end" : "justify-start"
+								}`}
 							>
 								{/* AIメッセージのアバターアイコン */}
 								{!message.isUser && (
@@ -124,7 +126,9 @@ export const SimpleMobileChatView: React.FC<SimpleMobileChatViewProps> = ({
 									`}
 								>
 									<p className="text-sm leading-relaxed whitespace-pre-wrap">
-										{message.text}
+										{message.translationKey
+											? t(message.translationKey)
+											: message.text}
 									</p>
 								</div>
 							</motion.div>

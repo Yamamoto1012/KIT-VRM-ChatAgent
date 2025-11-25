@@ -83,7 +83,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				{/* 誘導ラベル */}
 				<div className="absolute -top-12 left-4 z-10 animate-bounce">
 					<div className="bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-sm font-bold shadow-lg relative">
-						ここに質問を入力
+						{t("inputPrompt")}
 						<div className="absolute -bottom-1 left-4 w-2 h-2 bg-accent rotate-45" />
 					</div>
 				</div>

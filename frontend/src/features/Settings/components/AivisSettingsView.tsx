@@ -4,6 +4,7 @@
 
 import type { AivisMode } from "@/store/aivisSettingsAtoms";
 import { Check, Edit2, Trash2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface AivisSettingsViewProps {
 	aivisMode: AivisMode;
@@ -40,6 +41,7 @@ export const AivisSettingsView = ({
 	onClearApiKey,
 	onClose,
 }: AivisSettingsViewProps) => {
+	const { t } = useTranslation("settings");
 	const hasApiKey = cloudApiKey.trim() !== "";
 	const isSaveDisabled = tempApiKey.trim() === "";
 	const inputValue = isEditingApiKey ? tempApiKey : "";
@@ -49,7 +51,7 @@ export const AivisSettingsView = ({
 			<div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
 				<div className="flex justify-between items-center mb-6">
 					<h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-						Aivis設定
+						{t("title")}
 					</h2>
 					<button
 						type="button"
@@ -76,7 +78,7 @@ export const AivisSettingsView = ({
 				{/* モード選択 */}
 				<div className="mb-6">
 					<div className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-						音声合成エンジン
+						{t("ttsEngine")}
 					</div>
 					<div className="space-y-2">
 						<label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -90,10 +92,10 @@ export const AivisSettingsView = ({
 							/>
 							<div>
 								<div className="font-medium text-gray-900 dark:text-white">
-									ローカルAivis
+									{t("localAivis")}
 								</div>
 								<div className="text-sm text-gray-500 dark:text-gray-400">
-									Docker経由でローカルのAivis Engineを使用
+									{t("localAivisDesc")}
 								</div>
 							</div>
 						</label>
@@ -109,10 +111,10 @@ export const AivisSettingsView = ({
 							/>
 							<div>
 								<div className="font-medium text-gray-900 dark:text-white">
-									Aivis Cloud API
+									{t("cloudApi")}
 								</div>
 								<div className="text-sm text-gray-500 dark:text-gray-400">
-									高速なクラウドAPIを使用（要APIキー）
+									{t("cloudApiDesc")}
 								</div>
 							</div>
 						</label>
@@ -127,7 +129,7 @@ export const AivisSettingsView = ({
 								htmlFor="apiKey"
 								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
 							>
-								APIキー
+								{t("apiKey")}
 							</label>
 
 							{/* APIキーが設定済みで編集モードでない場合 */}
@@ -155,7 +157,7 @@ export const AivisSettingsView = ({
 										</button>
 									</div>
 									<p className="text-xs text-green-600 dark:text-green-400">
-										✓ APIキーが設定されています
+										{t("apiKeyConfigured")}
 									</p>
 								</div>
 							) : (
@@ -169,7 +171,7 @@ export const AivisSettingsView = ({
 											onChange={(event) =>
 												onTempApiKeyChange(event.target.value)
 											}
-											placeholder="Aivis Cloud APIキーを入力"
+											placeholder={t("apiKeyPlaceholder")}
 											className="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
 										/>
 										{isEditingApiKey && (
@@ -203,7 +205,7 @@ export const AivisSettingsView = ({
 										>
 											Aivis Hub
 										</a>
-										でAPIキーを取得できます
+										{t("getApiKey").replace("Aivis Hub", "")}
 									</p>
 								</div>
 							)}
@@ -214,24 +216,24 @@ export const AivisSettingsView = ({
 								htmlFor="modelUuid"
 								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
 							>
-								モデルUUID
+								{t("modelUuid")}
 							</label>
 							<input
 								id="modelUuid"
 								type="text"
 								value={manualModelUuid}
 								onChange={(e) => onModelUuidChange(e.target.value)}
-								placeholder={autoModelUuid || "使用する音声モデルのUUIDを入力"}
+								placeholder={autoModelUuid || t("modelUuidPlaceholder")}
 								className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 							/>
 							<p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
 								{autoModelUuid && manualModelUuid.trim() === "" ? (
 									<>
 										<span className="text-green-600 dark:text-green-400">
-											✓ 自動設定: {autoModelUuid}
+											{t("autoConfig")}: {autoModelUuid}
 										</span>
 										<br />
-										手動で入力すると上書きされます
+										{t("manualOverride")}
 									</>
 								) : (
 									<>
@@ -243,7 +245,7 @@ export const AivisSettingsView = ({
 										>
 											Aivis Hub
 										</a>
-										でモデルを検索できます
+										{t("searchModel").replace("Aivis Hub", "")}
 									</>
 								)}
 							</p>
@@ -253,7 +255,7 @@ export const AivisSettingsView = ({
 						{!isConfigured && (
 							<div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
 								<p className="text-sm text-yellow-800 dark:text-yellow-200">
-									⚠️ APIキーとモデルUUIDの両方を設定してください
+									{t("configWarning")}
 								</p>
 							</div>
 						)}
@@ -267,7 +269,7 @@ export const AivisSettingsView = ({
 						onClick={onClose}
 						className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
 					>
-						保存して閉じる
+						{t("saveAndClose")}
 					</button>
 				</div>
 			</div>
