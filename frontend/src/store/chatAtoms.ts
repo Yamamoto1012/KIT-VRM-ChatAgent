@@ -15,7 +15,7 @@ export type Message = {
 	isUser: boolean;
 	speakText?: string;
 	isStreaming?: boolean;
-	documentName?: string;
+	documentName?: string | string[];
 };
 
 /**
