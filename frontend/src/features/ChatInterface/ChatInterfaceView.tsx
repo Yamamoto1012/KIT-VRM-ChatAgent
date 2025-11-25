@@ -66,7 +66,7 @@ export const ChatInterfaceView: React.FC<ChatInterfaceViewProps> = ({
 			md:max-h-[600px] lg:max-h-[650px] xl:max-h-[700px] 
 			flex flex-col 
 			relative
-			bg-white/5 backdrop-blur-[2px]
+			bg-white/5
 			border border-white/20 rounded-[2rem]
 			shadow-sm
 			overflow-hidden

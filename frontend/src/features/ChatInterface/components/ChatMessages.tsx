@@ -38,9 +38,6 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 				scrollbar-none
 			"
 			style={{
-				maskImage: "linear-gradient(to bottom, transparent 0%, black 10%)",
-				WebkitMaskImage:
-					"linear-gradient(to bottom, transparent 0%, black 10%)",
 				WebkitOverflowScrolling: "touch",
 			}}
 		>

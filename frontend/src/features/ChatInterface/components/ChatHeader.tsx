@@ -26,7 +26,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ onReset }) => {
 							onClick={onReset}
 							className={`
 								h-10 w-10 rounded-full 
-								bg-white/40 backdrop-blur-md 
+								bg-white/40 backdrop-blur-none blur-none
 								hover:bg-white/60 
 								shadow-sm hover:shadow-md 
 								transition-all duration-300 
