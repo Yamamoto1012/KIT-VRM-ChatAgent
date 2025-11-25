@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings, logger
 from routers import (
     dictionary,
+    documents,
     greeting_trigger,
     health,
     llm,
@@ -86,6 +87,7 @@ def create_application() -> FastAPI:
     app.include_router(health.router, prefix="", tags=["health"])
     app.include_router(speech.router, prefix="", tags=["speech"])
     app.include_router(dictionary.router, prefix="", tags=["dictionary"])
+    app.include_router(documents.router, prefix="", tags=["documents"])
     app.include_router(llm.router, prefix="/api/llm", tags=["llm"])
     app.include_router(openai.router, prefix="", tags=["openai"])
     app.include_router(rag.router, prefix="/api", tags=["rag"])
