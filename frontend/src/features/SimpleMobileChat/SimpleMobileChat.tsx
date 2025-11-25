@@ -89,6 +89,7 @@ export const SimpleMobileChat: React.FC = () => {
 					addMessage({
 						text: t("errorGeneratingResponse"),
 						isUser: false,
+						translationKey: "errorGeneratingResponse",
 					});
 				}
 			} finally {

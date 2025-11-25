@@ -1,0 +1,19 @@
+{
+	"title": "Aivis設定",
+	"ttsEngine": "音声合成エンジン",
+	"localAivis": "ローカルAivis",
+	"localAivisDesc": "Docker経由でローカルのAivis Engineを使用",
+	"cloudApi": "Aivis Cloud API",
+	"cloudApiDesc": "高速なクラウドAPIを使用（要APIキー）",
+	"apiKey": "APIキー",
+	"apiKeyConfigured": "✓ APIキーが設定されています",
+	"apiKeyPlaceholder": "Aivis Cloud APIキーを入力",
+	"getApiKey": "Aivis HubでAPIキーを取得できます",
+	"modelUuid": "モデルUUID",
+	"modelUuidPlaceholder": "使用する音声モデルのUUIDを入力",
+	"autoConfig": "✓ 自動設定",
+	"manualOverride": "手動で入力すると上書きされます",
+	"searchModel": "Aivis Hubでモデルを検索できます",
+	"configWarning": "⚠️ APIキーとモデルUUIDの両方を設定してください",
+	"saveAndClose": "保存して閉じる"
+}

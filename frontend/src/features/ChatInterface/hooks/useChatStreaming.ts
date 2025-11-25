@@ -12,10 +12,9 @@ import {
 } from "../../../store/chatAtoms";
 import { currentLanguageAtom } from "../../../store/languageAtoms";
 
-import { useSentiment } from "../../../hooks/useSentiment";
 import { useStreamingTTS } from "../../../hooks/useStreamingTTS";
 import { useTextToSpeech } from "../../../hooks/useTextToSpeech";
-import type { SentimentAnalysisResult } from "../../../types/sentiment";
+import type { SentimentCategory } from "../../../types/sentiment";
 
 import {
 	type ConversationMessage,
@@ -69,13 +68,51 @@ export interface ChatStreamingResult {
 }
 
 /**
+ * 感情ラベルをSentimentCategoryにマッピングするヘルパー関数
+ */
+const mapEmotionToSentiment = (emotionLabel?: string): SentimentCategory => {
+	if (!emotionLabel) return "neutral";
+
+	// Difyからのemotion_labelをSentimentCategoryにマッピング
+	const label = emotionLabel.toLowerCase();
+	switch (label) {
+		// 直接的なカテゴリ名
+		case "strong_positive":
+		case "mild_positive":
+		case "neutral":
+		case "mild_negative":
+		case "strong_negative":
+			return label as SentimentCategory;
+
+		// その他の表現のマッピング
+		case "happy":
+		case "joy":
+			return "strong_positive";
+		case "relaxed":
+		case "calm":
+			return "mild_positive";
+		case "sad":
+		case "sorrow":
+			return "mild_negative";
+		case "angry":
+		case "anger":
+			return "strong_negative";
+		case "surprised":
+		case "surprise":
+			return "mild_positive";
+		default:
+			return "neutral";
+	}
+};
+
+/**
  * チャットインターフェース用のストリーミング機能を管理するカスタムフック
  *
  * 主な機能:
  * - LLMからのストリーミング/非ストリーミングレスポンス処理
  * - リアルタイムテキストアニメーション表示
  * - TTSストリーミング音声合成との連携
- * - センチメント分析によるVRM表情制御
+ * - 感情ラベルによるVRM表情制御
  * - メッセージ間のバッファ分離と安全な状態管理
  *
  * @param options フック設定オプション
@@ -176,26 +213,21 @@ export const useChatStreaming = ({
 		}
 	}, [vrmWrapperRef]);
 
-	// センチメント分析の結果をVRMに反映する
-	const handleSentimentChange = (result: SentimentAnalysisResult) => {
-		// 感情分析結果をVRMの表情に反映
-		if (vrmWrapperRef?.current?.setExpressionBySentiment) {
-			vrmWrapperRef.current.setExpressionBySentiment(result.category, {
-				forceUpdate: true,
-			});
-		} else {
-			console.warn(
-				"[useChatStreaming] vrmWrapperRef or setExpressionBySentiment is missing",
-			);
-		}
-	};
+	// 感情ラベルに基づいてVRMの表情を更新
+	const handleEmotionLabel = useCallback(
+		(emotionLabel: string) => {
+			console.log("[useChatStreaming] Handling emotion label:", emotionLabel);
+			const sentiment = mapEmotionToSentiment(emotionLabel);
+			console.log("[useChatStreaming] Mapped sentiment:", sentiment);
 
-	/** センチメント分析機能 */
-	const { analyzeSentiment } = useSentiment({
-		enabled: true,
-		enableDebugLogging: false,
-		onSentimentChange: handleSentimentChange,
-	});
+			if (vrmWrapperRef?.current?.setExpressionBySentiment) {
+				vrmWrapperRef.current.setExpressionBySentiment(sentiment, {
+					forceUpdate: true,
+				});
+			}
+		},
+		[vrmWrapperRef],
+	);
 
 	// ===== ユーティリティ関数 =====
 
@@ -355,7 +387,7 @@ export const useChatStreaming = ({
 	/**
 	 * AI応答生成のメイン関数
 	 * ストリーミング/非ストリーミングモードに対応し、
-	 * TTS、センチメント分析、アニメーション表示を統合的に管理
+	 * TTS、感情ラベルによる表情制御、アニメーション表示を統合的に管理
 	 *
 	 * @param query ユーザーの質問テキスト
 	 * @param conversationHistory 会話履歴
@@ -410,12 +442,19 @@ export const useChatStreaming = ({
 				if (isStreamingMode) {
 					// ===== ストリーミングモード =====
 					let accumulatedText = ""; // 蓄積されたレスポンステキスト
+					let receivedEmotionLabel = ""; // 受信した感情ラベル
 
 					await generateTextStream(
 						payloadQuery,
 						conversationHistory,
 						controller.signal,
 						(chunk) => {
+							// 感情ラベルが含まれている場合は更新
+							if (chunk.emotion_label && !receivedEmotionLabel) {
+								receivedEmotionLabel = chunk.emotion_label;
+								handleEmotionLabel(receivedEmotionLabel);
+							}
+
 							if (chunk.type === "content" && chunk.content) {
 								// 単純な連結処理
 								const incrementalText = chunk.content || "";
@@ -445,9 +484,9 @@ export const useChatStreaming = ({
 									triggerExpressionsFromText(accumulatedText);
 								}
 							} else if (chunk.type === "done") {
+								console.log("[useChatStreaming] Done chunk received:", chunk);
 								// ストリーミング完了時の処理
 								streamingTTS.finalize(); // TTSストリーミング終了
-								analyzeSentiment(accumulatedText); // センチメント分析
 
 								// アニメーション完了を待ってから状態を更新
 								const waitForAnimation = () => {
@@ -459,7 +498,10 @@ export const useChatStreaming = ({
 									// アニメーション完了時の最終処理
 									updateMessage({
 										id: aiMessageId,
-										updates: { isStreaming: false },
+										updates: {
+											isStreaming: false,
+											documentName: chunk.documentName,
+										},
 									});
 									// isLoading.current は既に false に設定済み
 									isGenerating.current = false;
@@ -495,6 +537,15 @@ export const useChatStreaming = ({
 						currentLanguage,
 					);
 
+					// 感情ラベルがあれば適用
+					if (response.emotion_label) {
+						console.log(
+							"[useChatStreaming] Emotion label in response:",
+							response.emotion_label,
+						);
+						handleEmotionLabel(response.emotion_label);
+					}
+
 					// レスポンス取得時点で思考中UIを削除
 					isLoading.current = false;
 
@@ -512,9 +563,6 @@ export const useChatStreaming = ({
 					// 非ストリーミングモードでは通常のTTSを使用
 					speak(response.answer);
 
-					// センチメント分析を実行
-					analyzeSentiment(response.answer);
-
 					// テキストベースの表情トリガーを実行
 					triggerExpressionsFromText(response.answer);
 
@@ -526,7 +574,10 @@ export const useChatStreaming = ({
 						}
 						updateMessage({
 							id: aiMessageId,
-							updates: { isStreaming: false },
+							updates: {
+								isStreaming: false,
+								documentName: response.documentName,
+							},
 						});
 						isGenerating.current = false;
 					};
@@ -560,7 +611,6 @@ export const useChatStreaming = ({
 			streamingTTS,
 			bufferedAddChunk,
 			animateText,
-			analyzeSentiment,
 			updateMessage,
 			speak,
 			currentLanguage,
@@ -569,6 +619,7 @@ export const useChatStreaming = ({
 			clearBuffers,
 			streamingTTSState,
 			triggerExpressionsFromText,
+			handleEmotionLabel,
 		],
 	);
 

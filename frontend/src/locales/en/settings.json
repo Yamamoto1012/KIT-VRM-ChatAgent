@@ -1,0 +1,19 @@
+{
+	"title": "Aivis Settings",
+	"ttsEngine": "TTS Engine",
+	"localAivis": "Local Aivis",
+	"localAivisDesc": "Use local Aivis Engine via Docker",
+	"cloudApi": "Aivis Cloud API",
+	"cloudApiDesc": "Use high-speed Cloud API (API Key required)",
+	"apiKey": "API Key",
+	"apiKeyConfigured": "✓ API Key is configured",
+	"apiKeyPlaceholder": "Enter Aivis Cloud API Key",
+	"getApiKey": "You can get an API Key at Aivis Hub",
+	"modelUuid": "Model UUID",
+	"modelUuidPlaceholder": "Enter UUID of the voice model to use",
+	"autoConfig": "✓ Auto Config",
+	"manualOverride": "Manual input will override this",
+	"searchModel": "You can search for models at Aivis Hub",
+	"configWarning": "⚠️ Please configure both API Key and Model UUID",
+	"saveAndClose": "Save and Close"
+}

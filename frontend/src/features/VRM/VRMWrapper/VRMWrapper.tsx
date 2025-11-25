@@ -9,7 +9,6 @@ import {
 } from "react";
 import type { AudioStreamingState } from "../../../store/chatAtoms";
 import { selectedModelConfigAtom } from "../../../store/modelAtoms";
-import { sentimentDebugAtom } from "../../../store/sentimentDebugStore";
 import type { SentimentCategory } from "../../../types/sentiment";
 import { useExpressionManager } from "../VRMExpression/hooks/useExpressionManager";
 import { VRMRender } from "../VRMRender/VRMRender";
@@ -88,9 +87,6 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 		// 選択されたモデル設定を取得
 		const [modelConfig] = useAtom(selectedModelConfigAtom);
 
-		// 感情分析結果の監視
-		const [sentimentDebug] = useAtom(sentimentDebugAtom);
-
 		// VRMRenderコンポーネントへの参照（表情制御メソッドは不要）
 		const vrmRenderRef = useRef<{
 			crossFadeAnimation?: (vrmaUrl: string) => void;
@@ -102,28 +98,6 @@ export const VRMWrapper = forwardRef<VRMWrapperHandle, VRMWrapperProps>(
 
 		// 前回の深度を追跡
 		const prevDepthRef = useRef<number>(categoryDepth);
-
-		// 高度な感情表現を実行する関数（シンプル化）
-		const advancedSentimentExpression = useCallback(
-			(category: SentimentCategory) => {
-				// 直接フックから呼び出し、フォールバック不要
-				expressionManager.setExpressionBySentiment(category);
-			},
-			[expressionManager],
-		);
-
-		// 感情分析結果が更新された時にVRM表情を変更
-		useEffect(() => {
-			if (sentimentDebug.history.length > 0) {
-				const latestAnalysis =
-					sentimentDebug.history[sentimentDebug.history.length - 1];
-
-				// 思考中でない場合のみ表情を変更
-				if (!isThinking) {
-					advancedSentimentExpression(latestAnalysis.category);
-				}
-			}
-		}, [sentimentDebug.history, isThinking, advancedSentimentExpression]);
 
 		// 思考状態変更時の親への通知
 		useEffect(() => {
