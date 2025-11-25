@@ -103,7 +103,7 @@ export const ChatInterface = forwardRef<
 		// 会話履歴を準備（最新のユーザーメッセージも反映）
 		const conversationHistory: ConversationMessage[] = [
 			...messages
-				.slice(-19)
+				.slice(-50)
 				.map((msg) => ({
 					role: (msg.isUser ? "user" : "assistant") as "user" | "assistant",
 					content: msg.text,
