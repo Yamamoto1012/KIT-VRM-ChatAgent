@@ -99,7 +99,8 @@ const requestTTSLocal = async (
 	request: TTSRequest,
 	t: (key: string) => string,
 ): Promise<Blob> => {
-	const response = await fetch("/tts", {
+	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+	const response = await fetch(`${apiBaseUrl}/tts`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({

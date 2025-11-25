@@ -58,8 +58,13 @@ export async function generateTextStream(
 		language,
 	};
 
+	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+	const fullEndpoint = endpoint.startsWith("http")
+		? endpoint
+		: `${apiBaseUrl}${endpoint}`;
+
 	try {
-		const response = await fetch(endpoint, {
+		const response = await fetch(fullEndpoint, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -152,7 +157,8 @@ export async function generateTextNonStreaming(
 	};
 
 	try {
-		const response = await fetch("/api/llm/query_non_streaming", {
+		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+		const response = await fetch(`${apiBaseUrl}/api/llm/query_non_streaming`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
