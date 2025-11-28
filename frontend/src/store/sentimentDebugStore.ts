@@ -49,32 +49,6 @@ export const toggleSentimentDebugAtom = atom(
 );
 
 /**
- * 新しい感情分析結果を追加するAtom
- */
-export const addSentimentAnalysisAtom = atom(
-	null,
-	(get, set, newAnalysis: SentimentAnalysisResult) => {
-		const current = get(sentimentDebugAtom);
-		const newHistory = [...current.history, newAnalysis].slice(-10); // 最新10件のみ保持
-
-		// 平均スコアの計算
-		const totalScore = newHistory.reduce(
-			(sum, analysis) => sum + analysis.score,
-			0,
-		);
-		const averageScore = totalScore / newHistory.length;
-
-		set(sentimentDebugAtom, {
-			lastAnalysis: newAnalysis,
-			isVisible: current.isVisible,
-			history: newHistory,
-			averageScore: Math.round(averageScore * 100) / 100, // 小数点以下2桁
-			totalAnalyses: current.totalAnalyses + 1,
-		});
-	},
-);
-
-/**
  * 感情分析履歴をクリアするAtom
  */
 export const clearSentimentHistoryAtom = atom(null, (_get, set) => {

@@ -46,6 +46,7 @@ export type UseStreamingTTSOptions = {
 	maxQueueSize?: number;
 	splitPattern?: RegExp;
 	enableDebug?: boolean;
+	maxConcurrency?: number;
 };
 
 /**
@@ -87,6 +88,7 @@ export const useStreamingTTS = (
 		vrmWrapperRef,
 		maxQueueSize = 20, // キューの最大サイズ
 		splitPattern = /(?<=[。！？\n])/, // 文の区切りパターン
+		maxConcurrency = 3, // 最大並列生成数
 	} = options;
 
 	const { t } = useTranslation("voice");
@@ -363,8 +365,11 @@ export const useStreamingTTS = (
 		const itemToGenerate = state.queue.find(
 			(item) => item.status === AudioQueueItemStatus.PENDING,
 		);
+		const generatingCount = state.queue.filter(
+			(item) => item.status === AudioQueueItemStatus.GENERATING,
+		).length;
 
-		if (itemToGenerate && !state.isGenerating) {
+		if (itemToGenerate && generatingCount < maxConcurrency) {
 			const controller = new AbortController();
 			abortControllerRef.current = controller;
 
@@ -384,12 +389,19 @@ export const useStreamingTTS = (
 					});
 				})
 				.finally(() => {
-					updateState({ isGenerating: false });
+					setState((prev) => {
+						const isStillGenerating = prev.queue.some(
+							(item) =>
+								item.status === AudioQueueItemStatus.GENERATING &&
+								item.id !== itemToGenerate.id,
+						);
+						return { ...prev, isGenerating: isStillGenerating };
+					});
 				});
 		}
 	}, [
 		state.queue,
-		state.isGenerating,
+		maxConcurrency,
 		generateAudio,
 		updateState,
 		updateItemStatus,

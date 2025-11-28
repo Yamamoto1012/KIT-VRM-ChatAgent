@@ -124,15 +124,15 @@ export const SENTIMENT_TO_EXPRESSION: Record<
 	// 感情の強さに応じた表情設定
 	strong_positive: {
 		preset: "happy",
-		weight: 0.6,
-		duration: 5000, // 5秒後にリセット
+		weight: 0.4,
+		duration: 8000, // 8秒後にリセット
 		autoResetToNeutral: true,
 		randomVariations: ["happy", "surprised", "relaxed"],
 	},
 	mild_positive: {
 		preset: "happy",
-		weight: 0.4,
-		duration: 5000, // 5秒後にリセット
+		weight: 0.3,
+		duration: 8000, // 8秒後にリセット
 		autoResetToNeutral: true,
 		randomVariations: ["happy", "relaxed"],
 	},
@@ -143,15 +143,15 @@ export const SENTIMENT_TO_EXPRESSION: Record<
 	},
 	mild_negative: {
 		preset: "sad",
-		weight: 0.4,
-		duration: 5000, // 5秒後にリセット
+		weight: 0.3,
+		duration: 8000, // 8秒後にリセット
 		autoResetToNeutral: true,
 		randomVariations: ["sad"],
 	},
 	strong_negative: {
 		preset: "sad",
-		weight: 0.6,
-		duration: 5000, // 5秒後にリセット
+		weight: 0.4,
+		duration: 8000, // 8秒後にリセット
 		autoResetToNeutral: true,
 		randomVariations: ["sad", "angry"],
 	},

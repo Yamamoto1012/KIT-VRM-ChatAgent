@@ -15,6 +15,8 @@ export type Message = {
 	isUser: boolean;
 	speakText?: string;
 	isStreaming?: boolean;
+	documentName?: string | string[];
+	translationKey?: string;
 };
 
 /**
@@ -30,8 +32,18 @@ export type AudioStreamingState = {
 };
 
 const getInitialMessages = (): Message[] => [
-	{ id: 1, text: i18next.t("chat:welcomeMessage"), isUser: false },
-	{ id: 2, text: i18next.t("chat:welcomePrompt"), isUser: false },
+	{
+		id: 1,
+		text: i18next.t("chat:welcomeMessage"),
+		isUser: false,
+		translationKey: "chat:welcomeMessage",
+	},
+	{
+		id: 2,
+		text: i18next.t("chat:welcomePrompt"),
+		isUser: false,
+		translationKey: "chat:welcomePrompt",
+	},
 ];
 
 /**
@@ -77,6 +89,8 @@ export const addMessageAtom = atom(
 			isUser: boolean;
 			speakText?: string;
 			isStreaming?: boolean;
+			documentName?: string;
+			translationKey?: string;
 		},
 	) => {
 		const currentMessages = get(messagesAtom);
@@ -86,6 +100,8 @@ export const addMessageAtom = atom(
 			isUser: payload.isUser,
 			speakText: payload.speakText,
 			isStreaming: payload.isStreaming,
+			documentName: payload.documentName,
+			translationKey: payload.translationKey,
 		};
 		set(messagesAtom, [...currentMessages, newMessage]);
 	},

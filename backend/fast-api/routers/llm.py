@@ -29,6 +29,8 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     """LLMからの応答モデル（非ストリーミング用）"""
     answer: str
+    documentName: Optional[str] = None
+    emotion_label: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 
 class StreamChunk(BaseModel):
@@ -36,13 +38,15 @@ class StreamChunk(BaseModel):
     id: str
     type: str  # "content", "error", "done"
     content: Optional[str] = None
+    documentName: Optional[str] = None
+    emotion_label: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     timestamp: str
 
 
 def format_conversation_history(
     history: list[ConversationMessage], 
-    max_length: int = 1200
+    max_length: int = 30000
 ) -> str:
     """
     会話履歴を文字列にフォーマット
@@ -67,7 +71,7 @@ def format_conversation_history(
     return "\n".join(formatted_messages)
 
 
-def get_conversation_context(context: str) -> dict:
+def get_conversation_context(context: str) -> Dict[str, Any]:
     """
     会話コンテキストを単一フィールドで返す（Difyの段落対応により分割不要）
     """
@@ -122,6 +126,7 @@ async def stream_dify_response(
                     if line.startswith("data: "):
                         try:
                             data = json.loads(line[6:])
+                            # logger.info(f"Dify event: {data}") # Uncomment for full debug
                             
                             # Difyのイベントタイプに応じて処理
                             if data.get("event") == "workflow_started":
@@ -165,14 +170,22 @@ async def stream_dify_response(
                                     logger.debug(f"Node finished (content already streamed): {data.get('data', {}).get('node_id')}")
                             
                             elif data.get("event") == "workflow_finished":
+                                outputs = data.get("data", {}).get("outputs", {})
+                                logger.info(f"Workflow finished outputs keys: {list(outputs.keys())}")
+                                logger.info(f"Workflow finished outputs: {outputs}")
+                                # documentNameは配列のまま返す（フロントエンドで処理）
+                                doc_name = outputs.get("documentName")
+
                                 yield json.dumps({
                                     "id": data.get("task_id", ""),
                                     "type": "done",
                                     "content": "",
+                                    "documentName": doc_name,
+                                    "emotion_label": outputs.get("emotion_label"),
                                     "metadata": {
-                                        # outputsからresponseを除外してメタデータとして送信
-                                        k: v for k, v in data.get("data", {}).get("outputs", {}).items()
-                                        if k != "response"
+                                        # outputsからresponse, documentName, emotion_labelを除外してメタデータとして送信
+                                        k: v for k, v in outputs.items()
+                                        if k not in ("response", "documentName", "emotion_label")
                                     },
                                     "timestamp": datetime.now().isoformat()
                                 }) + "\n"
@@ -209,7 +222,7 @@ async def call_dify_workflow_blocking(
     workflow_id: str,
     inputs: Dict[str, Any],
     timeout: float = 30.0
-) -> str:
+) -> Dict[str, Any]:
     """
     Difyワークフローを呼び出す（非ストリーミング）
     """
@@ -217,13 +230,13 @@ async def call_dify_workflow_blocking(
         "Authorization": f"Bearer {settings.dify_api_key}",
         "Content-Type": "application/json"
     }
-    
+
     payload = {
         "inputs": inputs,
         "response_mode": "blocking",
         "user": "api-user"
     }
-    
+
     async with httpx.AsyncClient(
         timeout=timeout,
         verify=settings.verify_ssl
@@ -233,13 +246,23 @@ async def call_dify_workflow_blocking(
             headers=headers,
             json=payload
         )
-        
+
         if response.status_code != 200:
             logger.error(f"Dify API error: {response.status_code} - {response.text}")
             raise HTTPException(status_code=response.status_code, detail="Dify service error")
-        
+
         result = response.json()
-        return result.get("data", {}).get("outputs", {}).get("response", "応答を生成できませんでした。")
+        logger.info(f"Dify blocking response: {result}")
+        outputs = result.get("data", {}).get("outputs", {})
+        
+        # documentNameは配列のまま返す（フロントエンドで処理）
+        doc_name = outputs.get("documentName")
+
+        return {
+            "response": outputs.get("response", "応答を生成できませんでした。"),
+            "documentName": doc_name,
+            "emotion_label": outputs.get("emotion_label")
+        }
 
 @router.post("/query")
 async def process_query(request: QueryRequestWithHistory):
@@ -252,7 +275,7 @@ async def process_query(request: QueryRequestWithHistory):
             request.conversation_history or []
         )
         
-        # 会話コンテキストを単一フィールドで設定
+        # 会話コンテキストを設定
         context_data = get_conversation_context(history_context)
         
         inputs = {
@@ -275,19 +298,25 @@ async def process_query(request: QueryRequestWithHistory):
             )
         else:
             # 通常のレスポンス
-            answer = await call_dify_workflow_blocking(
+            result = await call_dify_workflow_blocking(
                 settings.dify_workflow_id,
                 inputs,
                 settings.llm_timeout
             )
-            return QueryResponse(answer=answer)
+            return QueryResponse(
+                answer=result["response"],
+                documentName=result.get("documentName"),
+                emotion_label=result.get("emotion_label")
+            )
             
     except httpx.RequestError as e:
         logger.error(f"API request failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Could not connect to Dify service")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing response: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error processing response")
+        raise HTTPException(status_code=500, detail=f"Error processing response: {str(e)}")
 
 @router.post("/voice_mode_answer")
 async def process_voice_mode_answer(request: QueryRequestWithHistory):
@@ -300,7 +329,7 @@ async def process_voice_mode_answer(request: QueryRequestWithHistory):
             request.conversation_history or []
         )
         
-        # 会話コンテキストを単一フィールドで設定
+        # 会話コンテキストを設定
         context_data = get_conversation_context(history_context)
         
         inputs = {
@@ -327,13 +356,17 @@ async def process_voice_mode_answer(request: QueryRequestWithHistory):
             )
         else:
             # 非ストリーミングの場合は従来通り
-            answer = await call_dify_workflow_blocking(
+            result = await call_dify_workflow_blocking(
                 settings.dify_voice_workflow_id or settings.dify_workflow_id,
                 inputs,
                 settings.llm_timeout
             )
-            
-            return QueryResponse(answer=answer)
+
+            return QueryResponse(
+                answer=result["response"],
+                documentName=result.get("documentName"),
+                emotion_label=result.get("emotion_label")
+            )
         
     except httpx.RequestError as e:
         logger.error(f"API request failed: {str(e)}")
@@ -353,7 +386,7 @@ async def process_query_non_streaming(request: QueryRequestWithHistory):
             request.conversation_history or []
         )
         
-        # 会話コンテキストを単一フィールドで設定
+        # 会話コンテキストを設定
         context_data = get_conversation_context(history_context)
         
         inputs = {
@@ -364,19 +397,25 @@ async def process_query_non_streaming(request: QueryRequestWithHistory):
         }
         
         # 強制的に非ストリーミングで処理
-        answer = await call_dify_workflow_blocking(
+        result = await call_dify_workflow_blocking(
             settings.dify_workflow_id,
             inputs,
             settings.llm_timeout
         )
-        return QueryResponse(answer=answer)
+        return QueryResponse(
+            answer=result["response"],
+            documentName=result.get("documentName"),
+            emotion_label=result.get("emotion_label")
+        )
             
     except httpx.RequestError as e:
         logger.error(f"API request failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Could not connect to Dify service")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing response: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error processing response")
+        raise HTTPException(status_code=500, detail=f"Error processing response: {str(e)}")
 
 @router.get("/health")
 async def health_check():
